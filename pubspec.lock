@@ -173,9 +173,9 @@ packages:
   livekit_client:
     dependency: "direct main"
     description:
-      path: ".."
-      relative: true
-    source: path
+      name: livekit_client
+      url: "https://pub.dartlang.org"
+    source: hosted
     version: "0.5.5"
   logging:
     dependency: "direct main"
