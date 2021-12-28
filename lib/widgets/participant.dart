@@ -24,7 +24,7 @@ abstract class ParticipantWidget extends StatefulWidget {
   final VideoQuality quality;
 
   const ParticipantWidget({
-    this.quality = VideoQuality.MEDIUM,
+    this.quality = VideoQuality.HIGH,
     Key? key,
   }) : super(key: key);
 }
@@ -55,8 +55,7 @@ class RemoteParticipantWidget extends ParticipantWidget {
   State<StatefulWidget> createState() => _RemoteParticipantWidgetState();
 }
 
-abstract class _ParticipantWidgetState<T extends ParticipantWidget>
-    extends State<T> {
+abstract class _ParticipantWidgetState<T extends ParticipantWidget> extends State<T> {
   //
   bool _visible = true;
   VideoTrack? get activeVideoTrack;
@@ -68,6 +67,7 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget>
     super.initState();
     widget.participant.addListener(_onParticipantChanged);
     _onParticipantChanged();
+    activeVideoTrack?.mediaStreamTrack.enableSpeakerphone(true);
   }
 
   @override
@@ -97,7 +97,7 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget>
           border: widget.participant.isSpeaking
               ? Border.all(
                   width: 5,
-                  color: LKColors.lkBlue,
+                  color: NolColors.lkBlue,
                 )
               : null,
         ),
@@ -111,9 +111,9 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget>
               onTap: () => setState(() => _visible = !_visible),
               child: activeVideoTrack != null
                   ? VideoTrackRenderer(
-                      activeVideoTrack!,
-                      fit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                    )
+                activeVideoTrack!,
+                fit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+              )
                   : const NoVideoWidget(),
             ),
 
@@ -127,8 +127,7 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget>
                   ...extraWidgets(),
                   ParticipantInfoWidget(
                     title: widget.participant.identity,
-                    audioAvailable: firstAudioPublication?.muted == false &&
-                        firstAudioPublication?.subscribed == true,
+                    audioAvailable: firstAudioPublication?.muted == false && firstAudioPublication?.subscribed == true,
                     connectionQuality: widget.participant.connectionQuality,
                   ),
                 ],
@@ -139,41 +138,32 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget>
       );
 }
 
-class _LocalParticipantWidgetState
-    extends _ParticipantWidgetState<LocalParticipantWidget> {
+class _LocalParticipantWidgetState extends _ParticipantWidgetState<LocalParticipantWidget> {
   @override
-  LocalTrackPublication<LocalVideoTrack>? get firstVideoPublication =>
-      widget.participant.videoTracks.firstOrNull;
+  LocalTrackPublication<LocalVideoTrack>? get firstVideoPublication => widget.participant.videoTracks.firstOrNull;
 
   @override
-  LocalTrackPublication<LocalAudioTrack>? get firstAudioPublication =>
-      widget.participant.audioTracks.firstOrNull;
+  LocalTrackPublication<LocalAudioTrack>? get firstAudioPublication => widget.participant.audioTracks.firstOrNull;
 
   @override
   VideoTrack? get activeVideoTrack {
-    if (firstVideoPublication?.subscribed == true &&
-        firstVideoPublication?.muted == false &&
-        _visible) {
+    if (firstVideoPublication?.subscribed == true && firstVideoPublication?.muted == false && _visible) {
       return firstVideoPublication?.track;
     }
   }
 }
 
-class _RemoteParticipantWidgetState
-    extends _ParticipantWidgetState<RemoteParticipantWidget> {
+class _RemoteParticipantWidgetState extends _ParticipantWidgetState<RemoteParticipantWidget> {
   @override
-  RemoteTrackPublication<RemoteVideoTrack>? get firstVideoPublication =>
-      widget.participant.videoTracks.firstOrNull;
+  RemoteTrackPublication<RemoteVideoTrack>? get firstVideoPublication => widget.participant.videoTracks.firstOrNull;
 
   @override
-  RemoteTrackPublication<RemoteAudioTrack>? get firstAudioPublication =>
-      widget.participant.audioTracks.firstOrNull;
+  RemoteTrackPublication<RemoteAudioTrack>? get firstAudioPublication => widget.participant.audioTracks.firstOrNull;
 
   @override
   VideoTrack? get activeVideoTrack {
     for (final trackPublication in widget.participant.videoTracks) {
-      print(
-          'video track ${trackPublication.sid} subscribed ${trackPublication.subscribed} muted ${trackPublication.muted}');
+      print('video track ${trackPublication.sid} subscribed ${trackPublication.subscribed} muted ${trackPublication.muted}');
       if (trackPublication.subscribed && !trackPublication.muted) {
         return trackPublication.track;
       }
@@ -223,12 +213,12 @@ class RemoteTrackPublicationMenuWidget extends StatelessWidget {
               // Subscribe/Unsubscribe
               if (pub.subscribed == false)
                 PopupMenuItem(
-                  child: const Text('Subscribe'),
+                  child: const Text('Mở mic'),
                   value: () => pub.subscribed = true,
                 )
               else if (pub.subscribed == true)
                 PopupMenuItem(
-                  child: const Text('Un-subscribe'),
+                  child: const Text('Tắt mic'),
                   value: () => pub.subscribed = false,
                 ),
             ];

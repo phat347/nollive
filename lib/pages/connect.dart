@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -45,8 +47,8 @@ class _ConnectPageState extends State<ConnectPage> {
   // Read saved URL and Token
   Future<void> _readPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    _uriCtrl.text = prefs.getString(_storeKeyUri) ?? '';
-    _tokenCtrl.text = prefs.getString(_storeKeyToken) ?? '';
+    _uriCtrl.text = 'wss://demo.nol.live:443/sfu'; //prefs.getString(_storeKeyUri) ?? '';
+    _tokenCtrl.text = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ2aWRlbyI6eyJyb29tQ3JlYXRlIjpmYWxzZSwicm9vbUpvaW4iOnRydWUsInJvb21MaXN0IjpmYWxzZSwicm9vbVJlY29yZCI6dHJ1ZSwicm9vbUFkbWluIjpmYWxzZSwicm9vbSI6Ijg4MzBiZDNlLTlmMjUtNGY4MC05ZjNhLTZlZDIzNmY3MTY2ZSIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOmZhbHNlLCJoaWRkZW4iOmZhbHNlfSwibWV0YWRhdGEiOiIiLCJzaGEyNTYiOiI5YTI2MzdhNy1lMmM4LTQ4MTEtYmQ1NS02MWVkMGNiMGM1MWMiLCJpc3MiOiJBUEl5cENIVHdvb3FZeDYiLCJleHAiOjE2NDA3NjMzNjgsIm5iZiI6MCwic3ViIjoiR0gtc2ZBVTBfNXVDQ3RHNkFBQkIiLCJqd3RpZCI6IkdILXNmQVUwXzV1Q0N0RzZBQUJCIn0.RUnYJOYNYLSI6fqBoG72HtcSAXUH3PwV2TEgCOBVGFM';// prefs.getString(_storeKeyToken) ?? '';
     setState(() {
       _simulcast = prefs.getBool(_storeKeySimulcast) ?? true;
     });
@@ -122,15 +124,16 @@ class _ConnectPageState extends State<ConnectPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 70),
+                    padding: const EdgeInsets.only(bottom: 50, top: 10),
                     child: SvgPicture.asset(
-                      'images/logo-dark.svg',
+                      'images/nol-logo.svg',
+                      height: 65,
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 25),
                     child: LKTextField(
-                      label: 'Server URL',
+                      label: 'Server Socket URL',
                       ctrl: _uriCtrl,
                     ),
                   ),
@@ -151,7 +154,7 @@ class _ConnectPageState extends State<ConnectPage> {
                           value: _simulcast,
                           onChanged: (value) => _setSimulcast(value),
                           inactiveTrackColor: Colors.white.withOpacity(.2),
-                          activeTrackColor: LKColors.lkBlue,
+                          activeTrackColor: NolColors.greenyBlue,
                           inactiveThumbColor: Colors.white.withOpacity(.5),
                           activeColor: Colors.white,
                         ),
@@ -175,7 +178,7 @@ class _ConnectPageState extends State<ConnectPage> {
                               ),
                             ),
                           ),
-                        const Text('CONNECT'),
+                        const Text('Kết nối'),
                       ],
                     ),
                   ),

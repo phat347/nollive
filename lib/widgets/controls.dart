@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background/flutter_background.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:livekit_client/livekit_client.dart';
 
 import '../exts.dart';
@@ -186,10 +187,15 @@ class _ControlsWidgetState extends State<ControlsWidget> {
               icon: const Icon(EvaIcons.videoOff),
               tooltip: 'un-mute video',
             ),
+
           IconButton(
-            icon: Icon(position == CameraPosition.back
-                ? EvaIcons.camera
-                : EvaIcons.person),
+            icon: (position == CameraPosition.back) ?
+            const Icon(EvaIcons.person) :
+            SvgPicture.asset(
+                'images/switchCamera.svg',
+                width: 20,
+                height: 20
+            ),
             onPressed: () => _toggleCamera(),
             tooltip: 'toggle camera',
           ),
@@ -207,14 +213,14 @@ class _ControlsWidgetState extends State<ControlsWidget> {
             ),
           IconButton(
             onPressed: _onTapDisconnect,
-            icon: const Icon(EvaIcons.closeCircle),
+            icon: const Icon(EvaIcons.phoneOffOutline),
             tooltip: 'disconnect',
           ),
-          IconButton(
-            onPressed: _onTapSendData,
-            icon: const Icon(EvaIcons.paperPlane),
-            tooltip: 'send demo data',
-          ),
+          // IconButton(
+          //   onPressed: _onTapSendData,
+          //   icon: const Icon(EvaIcons.paperPlane),
+          //   tooltip: 'send demo data',
+          // ),
           IconButton(
             onPressed: _onTapReconnect,
             icon: const Icon(EvaIcons.refresh),

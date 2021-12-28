@@ -8,17 +8,33 @@ import 'package:google_fonts/google_fonts.dart';
 // https://github.com/flutter/flutter/issues/39113
 //
 
-extension LKColors on Colors {
+extension NolColors on Colors {
   static const lkBlue = Color(0xFF5A8BFF);
   static const lkDarkBlue = Color(0xFF00153C);
+  static Color nolColor = HexColor.fromHex('#531b28');
+  static Color redPink = HexColor.fromHex('#ef4056');
+  static Color greenyBlue = HexColor.fromHex('#50bcb6');
+  static Color grapPurple = HexColor.fromHex("#5c202e");
+
+}
+
+extension HexColor on Color {
+
+  /// String is in the format "aabbcc" or "ffaabbcc" with an optional leading "#".
+  static Color fromHex(String hexString) {
+    final buffer = StringBuffer();
+    if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+    buffer.write(hexString.replaceFirst('#', ''));
+    return Color(int.parse(buffer.toString(), radix: 16));
+  }
 }
 
 class LiveKitTheme {
   //
-  final bgColor = Colors.black;
+  final bgColor = NolColors.nolColor;
   final textColor = Colors.white;
-  final cardColor = LKColors.lkDarkBlue;
-  final accentColor = LKColors.lkBlue;
+  final cardColor = NolColors.grapPurple;
+  final accentColor = NolColors.redPink;
 
   ThemeData buildThemeData(BuildContext ctx) => ThemeData(
         backgroundColor: bgColor,
@@ -32,6 +48,11 @@ class LiveKitTheme {
         canvasColor: bgColor,
         iconTheme: IconThemeData(
           color: textColor,
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            primary: NolColors.redPink
+          )
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
@@ -82,10 +103,10 @@ class LiveKitTheme {
         hintColor: Colors.red,
         inputDecorationTheme: InputDecorationTheme(
           labelStyle: const TextStyle(
-            color: LKColors.lkBlue,
+            color: Colors.white,
           ),
           hintStyle: TextStyle(
-            color: LKColors.lkBlue.withOpacity(.5),
+            color: Colors.white.withOpacity(.5),
           ),
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
