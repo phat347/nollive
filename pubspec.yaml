@@ -37,3 +37,6 @@ flutter:
   uses-material-design: true
   assets:
     - images/logo-dark.svg
+    - images/switchCamera.svg
+    - images/nol-logo.svg
+    - images/nol_mini_icon.svg

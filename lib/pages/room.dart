@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:livekit_example/theme.dart';
 
 import '../exts.dart';
 import '../widgets/controls.dart';
@@ -130,31 +133,58 @@ class _RoomPageState extends State<RoomPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Column(
-          children: [
-            Expanded(
-                child: participants.isNotEmpty
-                    ? ParticipantWidget.widgetFor(participants.first)
-                    : Container()),
-            SizedBox(
-              height: 100,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: math.max(0, participants.length - 1),
-                itemBuilder: (BuildContext context, int index) => SizedBox(
-                  width: 100,
-                  height: 100,
-                  child: ParticipantWidget.widgetFor(participants[index + 1]),
+    body: Stack(
+        children: [
+          Column(
+            children: [
+              Expanded(
+                  child: participants.isNotEmpty
+                      ? ParticipantWidget.widgetFor(participants.first)
+                      : Container()),
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: math.max(0, participants.length - 1),
+                  itemBuilder: (BuildContext context, int index) => SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: ParticipantWidget.widgetFor(participants[index + 1]),
+                  ),
+                ),
+              ),
+              if (widget.room.localParticipant != null)
+                SafeArea(
+                  top: false,
+                  child:
+                  ControlsWidget(widget.room, widget.room.localParticipant!),
+                ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 25, top: 25),
+              child: ClipRRect(
+                borderRadius: new BorderRadius.circular(25),
+                child: SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: Container(
+                      child: Padding(
+                        padding: EdgeInsets.all(7),
+                        child: Opacity(
+                            opacity: 0.8,
+                            child: SvgPicture.asset('images/nol_mini_icon.svg')),
+                      ),
+                      color: NolColors.grapPurple.withOpacity(0.3)
+                  ),
                 ),
               ),
             ),
-            if (widget.room.localParticipant != null)
-              SafeArea(
-                top: false,
-                child:
-                    ControlsWidget(widget.room, widget.room.localParticipant!),
-              ),
-          ],
-        ),
-      );
+          )
+
+        ]
+    ),
+  );
 }
