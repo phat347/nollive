@@ -11,3 +11,7 @@ class EnterRoomResponse extends ChangeNotifier {
     livekitToken = responseJson['livekit_token'] as String;
 
 }
+
+class RoomInfoResponse extends ChangeNotifier {
+
+}

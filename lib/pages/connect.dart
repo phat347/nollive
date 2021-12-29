@@ -89,16 +89,16 @@ class _ConnectPageState extends State<ConnectPage> {
           'entered_room',
               (data) {
             print('hung entered_room: ${data.toString()}');
-            final jsonData = jsonDecode(data);
-            setState(() {
-              if (jsonData['livekit_token']) {
+            final Map<String, dynamic> jsonData = jsonDecode(data);
+            if (jsonData.keys.contains('livekit_token')) {
+              setState(() {
                 enterRoomRes = EnterRoomResponse.fromJson(jsonDecode(data));
                 liveKitToken = enterRoomRes.livekitToken;
                 print('hung log liveKitToken: liveKitToken');
                 _readPrefs();
-              }
+              });
+            }
 
-            });
           }
       );
 
