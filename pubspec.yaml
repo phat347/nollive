@@ -25,6 +25,8 @@ dependencies:
     #   url: https://github.com/livekit/client-sdk-flutter
     #   ref: main
 
+  socket_io_client: ^2.0.0-beta.4-nullsafety.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

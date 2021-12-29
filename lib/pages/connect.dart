@@ -3,7 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:livekit_example/widgets/text_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart';
 import '../exts.dart';
 import '../theme.dart';
 import 'room.dart';
@@ -29,10 +30,12 @@ class _ConnectPageState extends State<ConnectPage> {
   bool _simulcast = true;
   bool _busy = false;
 
+
   @override
   void initState() {
     super.initState();
     _readPrefs();
+    connectToServer();
   }
 
   @override
@@ -40,6 +43,45 @@ class _ConnectPageState extends State<ConnectPage> {
     _uriCtrl.dispose();
     _tokenCtrl.dispose();
     super.dispose();
+  }
+
+  void connectToServer() {
+    try {
+
+      // Configure socket transports must be sepecified
+      IO.Socket socket = IO.io('wss://demo.nol.live:443',
+          OptionBuilder()
+              .setTransports(['websocket']) // for Flutter or Dart VM
+              .disableAutoConnect()  // disable auto-connection
+              .setExtraHeaders({'fullname': 'Phat','jwt': ''}) // optional
+              .build()
+      );
+
+      socket.connect();
+
+
+      // Handle socket events
+      socket.onConnect((_) {
+        print('connect');
+
+        //request_enter_room
+        socket.emit('request_enter_room', {'room': 'c936c08b-1153-4cd5-868d-fe2ee32c6ddc'});
+
+        //call back entered_room
+        socket.on( // not working
+            'entered_room',
+                (data) => () {
+              print(data);
+            });
+      });
+
+      socket.onDisconnect((_) => {print('disconnect')});
+
+    } catch (e) {
+      print(e.toString());
+    }
+
+
   }
 
   // Read saved URL and Token
