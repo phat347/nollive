@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:livekit_example/model/roomInfo.dart';
 import 'package:livekit_example/widgets/text_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -31,12 +34,13 @@ class _ConnectPageState extends State<ConnectPage> {
   bool _busy = false;
   String liveKitToken = '';
   String socketURL = 'wss://demo.nol.live:443/sfu';
+  EnterRoomResponse enterRoomRes = EnterRoomResponse('');
 
 
   @override
   void initState() {
     super.initState();
-    // _readPrefs();
+    _readPrefs();
     connectToServer();
   }
 
@@ -56,7 +60,7 @@ class _ConnectPageState extends State<ConnectPage> {
           OptionBuilder()
               .setTransports(['websocket']) // for Flutter or Dart VM
               .disableAutoConnect() // disable auto-connection
-              .setAuth({'fullname': 'Hung Native','jwt': ''}) // optional
+              .setAuth({'fullname': 'Hung Native 123','jwt': ''}) // optional
               .build()
       );
 
@@ -85,10 +89,15 @@ class _ConnectPageState extends State<ConnectPage> {
           'entered_room',
               (data) {
             print('hung entered_room: ${data.toString()}');
-            print('hung log: ${data['livekit_token'].toString()}');
+            final jsonData = jsonDecode(data);
             setState(() {
-              liveKitToken = data['livekit_token'].toString();
-              _readPrefs();
+              if (jsonData['livekit_token']) {
+                enterRoomRes = EnterRoomResponse.fromJson(jsonDecode(data));
+                liveKitToken = enterRoomRes.livekitToken;
+                print('hung log liveKitToken: liveKitToken');
+                _readPrefs();
+              }
+
             });
           }
       );
