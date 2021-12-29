@@ -34,7 +34,7 @@ class _ConnectPageState extends State<ConnectPage> {
   @override
   void initState() {
     super.initState();
-    _readPrefs();
+    // _readPrefs();
     connectToServer();
   }
 
@@ -50,33 +50,53 @@ class _ConnectPageState extends State<ConnectPage> {
 
       // Configure socket transports must be sepecified
 
-      IO.Socket socket = IO.io('wss://demo.nol.live:443',
+      IO.Socket socket = IO.io('wss://demo.nol.live:443/',
           OptionBuilder()
               .setTransports(['websocket']) // for Flutter or Dart VM
-              .disableAutoConnect() // disable auto-connection
-              .setExtraHeaders({'fullname': 'Phat','jwt': ''}) // optional
+          // .disableAutoConnect() // disable auto-connection
+          .setAuth({'fullname': 'Hung Native','jwt': ''}) // optional
               .build()
       );
 
       socket.connect();
 
-
       // Handle socket events
-      socket.onConnect((_) {
-        print('connect');
-
-        //request_enter_room
-        socket.emit('request_enter_room', {'room': 'c936c08b-1153-4cd5-868d-fe2ee32c6ddc'});
+      socket.onConnect((mess) {
+        print('connect to Socket: ${mess}');
 
         //call back entered_room
         socket.on( // not working
             'entered_room',
                 (data) => () {
-              print(data);
+              print('entered_room: ${data}');
+            });
+
+        socket.on(
+            'connected',
+                (data) => () {
+              print('connected: ${data}');
+              //request_enter_room
+              socket.emit(
+                  'request_enter_room',
+                  {
+                    'room': 'd8b8eb67-8a0b-4780-8341-f46b9a2c3d6f',
+                    'livekit_token': ''
+                  }
+                  );
+            });
+
+        socket.on(
+            'AREYOUTHERE',
+                (data) => () {
+              print('AREYOUTHERE ${data.toString()}');
+              socket.emit('IAMHERE', data);
             });
       });
 
-      socket.onDisconnect((_) => {print('disconnect')});
+      socket.onDisconnect((_) => {
+        print('disconnect')
+      });
+
 
     } catch (e) {
       print(e.toString());
@@ -88,8 +108,8 @@ class _ConnectPageState extends State<ConnectPage> {
   // Read saved URL and Token
   Future<void> _readPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    _uriCtrl.text = prefs.getString(_storeKeyUri) ?? '';
-    _tokenCtrl.text = prefs.getString(_storeKeyToken) ?? '';
+    _uriCtrl.text = 'wss://demo.nol.live:443/sfu';//prefs.getString(_storeKeyUri) ?? '';
+    _tokenCtrl.text = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ2aWRlbyI6eyJyb29tQ3JlYXRlIjpmYWxzZSwicm9vbUpvaW4iOnRydWUsInJvb21MaXN0IjpmYWxzZSwicm9vbVJlY29yZCI6dHJ1ZSwicm9vbUFkbWluIjpmYWxzZSwicm9vbSI6ImQ4YjhlYjY3LThhMGItNDc4MC04MzQxLWY0NmI5YTJjM2Q2ZiIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOmZhbHNlLCJoaWRkZW4iOmZhbHNlfSwibWV0YWRhdGEiOiIiLCJzaGEyNTYiOiI5MjQyNThkNS1hOTM5LTQ3ZmQtOWM5NS02ZTk4NzdjZDdlZjkiLCJpc3MiOiJBUEl5cENIVHdvb3FZeDYiLCJleHAiOjE2NDA4MDIxODUsIm5iZiI6MCwic3ViIjoiYUFqdnRKWlRsWjdrS3hSckFBQUsiLCJqd3RpZCI6ImFBanZ0SlpUbFo3a0t4UnJBQUFLIn0.IxZZ7of11EWvPIGjeXuofJRj4SNdgzlJYfUVbcg-X_4';//prefs.getString(_storeKeyToken) ?? '';
     setState(() {
       _simulcast = prefs.getBool(_storeKeySimulcast) ?? true;
     });
@@ -202,7 +222,7 @@ class _ConnectPageState extends State<ConnectPage> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: _busy ? null : () => _connect(context),
+                    onPressed: _busy ? null : () => {},//_connect(context),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
