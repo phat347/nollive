@@ -49,10 +49,11 @@ class _ConnectPageState extends State<ConnectPage> {
     try {
 
       // Configure socket transports must be sepecified
+
       IO.Socket socket = IO.io('wss://demo.nol.live:443',
           OptionBuilder()
               .setTransports(['websocket']) // for Flutter or Dart VM
-              .disableAutoConnect()  // disable auto-connection
+              .disableAutoConnect() // disable auto-connection
               .setExtraHeaders({'fullname': 'Phat','jwt': ''}) // optional
               .build()
       );
