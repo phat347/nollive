@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:livekit_client/livekit_client.dart';
-
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../exts.dart';
 
 class ControlsWidget extends StatefulWidget {
@@ -146,6 +146,21 @@ class _ControlsWidgetState extends State<ControlsWidget> {
     }
   }
 
+  void _onTapShowListOuput() async {
+
+    List<MediaDeviceInfo> _listOutput = await Helper.audiooutputs;
+
+    final result = await context.showChoiceListOutput(_listOutput);
+    if (result != '') {
+      widget.room.participants.forEach((key, _participant) {
+        if (_participant.audioTracks.firstOrNull?.track?.mediaStreamTrack != null) {
+          var track = _participant.audioTracks.firstOrNull?.track?.mediaStreamTrack;
+          Helper.setVolume(1, track!);
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -226,6 +241,9 @@ class _ControlsWidgetState extends State<ControlsWidget> {
             icon: const Icon(EvaIcons.refresh),
             tooltip: 're-connect',
           ),
+          IconButton(
+              onPressed: _onTapShowListOuput,
+              icon: const Icon(EvaIcons.volumeUpOutline))
         ],
       ),
     );

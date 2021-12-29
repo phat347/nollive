@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:livekit_example/theme.dart';
 
 extension LKExampleExt on BuildContext {
   //
@@ -135,4 +137,43 @@ extension LKExampleExt on BuildContext {
           ],
         ),
       );
+
+  Future<String?> showChoiceListOutput(List<MediaDeviceInfo> listOutput) {
+
+    print('listOutput ${listOutput}');
+    
+    List<DropdownMenuItem<MediaDeviceInfo>> dropDownItems = listOutput.map((output) => DropdownMenuItem<MediaDeviceInfo>(
+      child: Text(output.label),
+      onTap: () => Navigator.pop(this, output.deviceId),
+    )).toList();
+
+    return showDialog<String> (
+        context: this,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Chọn thiết bị đầu ra'),
+          content: SizedBox(
+            width: 200,
+            height: 100,
+            child: listOutput.isNotEmpty ? DropdownButton(
+              items: dropDownItems,
+              iconSize: 24,
+              elevation: 16,
+              isExpanded: true,
+              onChanged: (value) {  },
+              underline: Container(
+                height: 2,
+                color: NolColors.redPink,
+              ),
+            ) : const Text('Không tìm thấy đàu ra nào')
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, ''),
+              child: const Text('OK'),
+            ),
+          ],
+        )
+    );
+  }
+
 }
