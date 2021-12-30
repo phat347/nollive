@@ -1,6 +1,8 @@
 
 // ignore_for_file: non_constant_identifier_names
 
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 
 class FailedRoomResponse extends ChangeNotifier {
@@ -75,7 +77,7 @@ class RoomInfoResponse extends ChangeNotifier {
         room = responseJson['room'] as String,
         created = responseJson['created'] as String,
         expiry_datetime = responseJson['expiry_datetime'] as String,
-        users = responseJson['users'].map((userJson) => UsersResponse.fromJson(userJson));
+        users = (responseJson['users'] as Map<String, dynamic>).values.map((userJson) => UsersResponse.fromJson(userJson)).toList();
 }
 
 class LivekitRoomResponse extends ChangeNotifier {
@@ -85,18 +87,30 @@ class LivekitRoomResponse extends ChangeNotifier {
   int max_participants;
   String creation_time;
   String turn_password;
-  EnableCodecsResponse enabled_codecs;
+  List<EnableCodecsResponse> enabled_codecs;
   bool active_recording;
 
-  LivekitRoomResponse.fromJson(Map<String, dynamic> responseJson):
+  LivekitRoomResponse(
+      this.sid,
+      this.name,
+      this.empty_timeout,
+      this.max_participants,
+      this.creation_time,
+      this.turn_password,
+      this.enabled_codecs,
+      this.active_recording
+      );
+
+  LivekitRoomResponse.fromJson(dynamic responseJson):
         sid = responseJson['sid'] as String,
         empty_timeout = responseJson['empty_timeout'] as int,
         name = responseJson['name'] as String,
         max_participants = responseJson['max_participants'] as int,
         creation_time = responseJson['creation_time'] as String,
         turn_password = responseJson['turn_password'] as String,
-        enabled_codecs = EnableCodecsResponse.fromJson(responseJson['enabled_codecs']),
+        enabled_codecs = (responseJson['enabled_codecs'] as List).map((e)=> EnableCodecsResponse.fromJson(e)).toList(),
         active_recording = responseJson['active_recording'] as bool;
+
 }
 
 class EnableCodecsResponse extends ChangeNotifier {
