@@ -60,11 +60,12 @@ class _ConnectPageState extends State<ConnectPage> {
   String livekitSocketURL = AppConfig.livekitURL;
   EnterRoomResponse enterRoomRes = EnterRoomResponse('', null);
   bool failedRoom = false;
+  String _roomID = '';
 
-  String get _roomID {
-    String splitRoomId = _roomIdCtrl.text.split('/').last.trim();
-    return splitRoomId;
-  }
+  // String get _roomID {
+  //   String splitRoomId = _roomIdCtrl.text.split('/').last.trim();
+  //   return splitRoomId;
+  // }
 
   String get _userName {
     return _nameCtrl.text.trim();
@@ -121,7 +122,7 @@ class _ConnectPageState extends State<ConnectPage> {
     // was a weidget that will be disposed of (ex. a navigation route change).
     if (!_initialUriIsHandled) {
       _initialUriIsHandled = true;
-      _showSnackBar('_handleInitialUri called');
+      // _showSnackBar('_handleInitialUri called');
       try {
         final uri = await getInitialUri();
         if (uri == null) {
@@ -130,7 +131,26 @@ class _ConnectPageState extends State<ConnectPage> {
           print('got initial uri: $uri');
         }
         if (!mounted) return;
-        setState(() => _initialUri = uri);
+        setState(() {
+          _initialUri = uri;
+          final queryParams = _initialUri?.pathSegments.toList();
+          // final queryParams = _initialUri?.queryParametersAll.entries.toList();
+
+          if(queryParams!=null)
+          {
+            if(queryParams.length>0)
+            {
+              print('Phat room id ${queryParams[1]}');
+              _roomIdCtrl.text = queryParams[1];
+              _roomID = queryParams[1];
+              _showSnackBar('room id: ${queryParams[1]}');
+            }
+          }
+          else
+          {
+            print('Phat no deeplink');
+          }
+        });
       } on PlatformException {
         // Platform messages may fail but we ignore the exception
         print('falied to get initial uri');
@@ -265,27 +285,10 @@ class _ConnectPageState extends State<ConnectPage> {
   }
 
   Future<void> _connect(BuildContext ctx) async {
-    final queryParams = _initialUri?.pathSegments.toList();
-    // final queryParams = _initialUri?.queryParametersAll.entries.toList();
 
-    print('latestURI : ${_latestUri}');
-    if(queryParams!=null)
-      {
-        if(queryParams.length>0)
-          {
-            print('Phat room id ${queryParams[1]}');
-
-            _showSnackBar('room id: ${queryParams[1]}');
-          }
-      }
-    else
-      {
-        print('Phat no deeplink');
-      }
 
     if (_roomIdCtrl.text.isEmpty ||
         _nameCtrl.text.isEmpty ||
-        _roomID.isEmpty ||
         _userName.isEmpty) {
       await ctx.showErrorDialog('Hãy nhập đầy đủ thông tin');
       return;
@@ -358,7 +361,7 @@ class _ConnectPageState extends State<ConnectPage> {
   @override
   Widget build(BuildContext context) {
 
-    // final queryParams = _latestUri?.queryParametersAll.entries.toList();
+    // final queryParams = _initialUri?.pathSegments.toList();
 
     Future.delayed(const Duration(milliseconds: 500), () {
       _checkFailedRoom(context);
