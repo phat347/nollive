@@ -63,6 +63,7 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget> extends Stat
   TrackPublication? get firstVideoPublication;
   TrackPublication? get firstAudioPublication;
 
+
   @override
   void initState() {
     super.initState();
@@ -98,7 +99,7 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget> extends Stat
           border: widget.participant.isSpeaking
               ? Border.all(
                   width: 5,
-                  color: NolColors.lkBlue,
+                  color: NolColors.redPink,
                 )
               : null,
         ),
@@ -169,6 +170,17 @@ class _RemoteParticipantWidgetState extends _ParticipantWidgetState<RemotePartic
         return trackPublication.track;
       }
     }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    for (final trackPublication in widget.participant.videoTracks) {
+      if (trackPublication.subscribed && !trackPublication.muted) {
+        trackPublication.track?.mediaStreamTrack.enableSpeakerphone(true);
+      }
+    }
+    super.initState();
   }
 
   @override
