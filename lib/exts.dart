@@ -125,7 +125,7 @@ extension LKExampleExt on BuildContext {
   Future<bool?> showDataReceivedDialog(String data) => showDialog<bool>(
         context: this,
         builder: (ctx) => AlertDialog(
-          title: const Text('Received data'),
+          title: const Text('Thông báo'),
           content: Text(data),
           actions: [
             TextButton(

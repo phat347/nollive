@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 
-class LKTextField extends StatelessWidget {
+class NolTextField extends StatelessWidget {
+
   final String label;
+  final String? placeHolder;
+  final TextInputType inputType;
   final TextEditingController? ctrl;
-  const LKTextField({
+
+  const NolTextField({
     required this.label,
+    this.placeHolder,
+    this.inputType = TextInputType.text,
     this.ctrl,
     Key? key,
   }) : super(key: key);
@@ -37,10 +43,10 @@ class LKTextField extends StatelessWidget {
             ),
             child: TextField(
               controller: ctrl,
-              decoration: const InputDecoration.collapsed(
-                hintText: '',
+              decoration: InputDecoration.collapsed(
+                hintText: placeHolder,
               ),
-              keyboardType: TextInputType.url,
+              keyboardType: inputType,
               autocorrect: false,
             ),
           ),

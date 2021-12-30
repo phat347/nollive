@@ -1,15 +1,19 @@
 import 'dart:convert';
+import 'dart:core';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:livekit_example/model/appConfig.dart';
+import 'package:livekit_example/model/getRoomInfoResponse.dart';
 import 'package:livekit_example/model/roomInfo.dart';
+import 'package:livekit_example/model/roomRequest.dart';
+import 'package:livekit_example/service/ApiService.dart';
 import 'package:livekit_example/widgets/text_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:socket_io_client/socket_io_client.dart';
 import '../exts.dart';
-import '../main.dart';
 import '../theme.dart';
 import 'room.dart';
 
@@ -27,30 +31,39 @@ class ConnectPage extends StatefulWidget {
 
 class _ConnectPageState extends State<ConnectPage> {
   //
-  static const _storeKeyUri = 'uri';
-  static const _storeKeyToken = 'token';
+  static const _storeKeyRoomID = 'roomID';
+  static const _storeKeyUserName = 'userName';
   static const _storeKeySimulcast = 'simulcast';
 
-  final _uriCtrl = TextEditingController();
-  final _tokenCtrl = TextEditingController();
+  final _roomIdCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
   bool _simulcast = true;
   bool _busy = false;
   String liveKitToken = '';
-  String socketURL = 'wss://demo.nol.live:443/sfu';
+  String livekitSocketURL = AppConfig.livekitURL;
   EnterRoomResponse enterRoomRes = EnterRoomResponse('', null);
   bool failedRoom = false;
 
+  String get _roomID {
+    String splitRoomId = _roomIdCtrl.text.split('/').last.trim();
+    return splitRoomId;
+  }
+
+  String get _userName {
+    return _nameCtrl.text.trim();
+  }
+
   @override
   void initState() {
-    connectToServer();
+    // connectToServer();
     super.initState();
-    _readPrefs();
+    // _readPrefs();
   }
 
   @override
   void dispose() {
-    _uriCtrl.dispose();
-    _tokenCtrl.dispose();
+    _roomIdCtrl.dispose();
+    _nameCtrl.dispose();
     super.dispose();
   }
 
@@ -59,7 +72,7 @@ class _ConnectPageState extends State<ConnectPage> {
 
       // Configure socket transports must be sepecified
 
-      IO.Socket socket = IO.io('wss://demo.nol.live:443/',
+      IO.Socket socket = IO.io(AppConfig.socketURL,
           OptionBuilder()
               .setTransports(['websocket']) // for Flutter or Dart VM
               .disableAutoConnect() // disable auto-connection
@@ -136,14 +149,13 @@ class _ConnectPageState extends State<ConnectPage> {
       print(e.toString());
     }
 
-
   }
 
   // Read saved URL and Token
   Future<void> _readPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    _uriCtrl.text = socketURL;//prefs.getString(_storeKeyUri) ?? '';
-    _tokenCtrl.text = liveKitToken;//prefs.getString(_storeKeyToken) ?? '';
+    _roomIdCtrl.text = prefs.getString(_storeKeyRoomID) ?? '';
+    _nameCtrl.text = prefs.getString(_storeKeyUserName) ?? '';
     setState(() {
       _simulcast = prefs.getBool(_storeKeySimulcast) ?? true;
     });
@@ -152,12 +164,33 @@ class _ConnectPageState extends State<ConnectPage> {
   // Save URL and Token
   Future<void> _writePrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storeKeyUri, _uriCtrl.text);
-    await prefs.setString(_storeKeyToken, _tokenCtrl.text);
+    await prefs.setString(_storeKeyRoomID, _roomIdCtrl.text);
+    await prefs.setString(_storeKeyUserName, _nameCtrl.text);
     await prefs.setBool(_storeKeySimulcast, _simulcast);
   }
 
   Future<void> _connect(BuildContext ctx) async {
+    if (_roomIdCtrl.text.isEmpty ||
+        _nameCtrl.text.isEmpty ||
+        _roomID.isEmpty ||
+        _userName.isEmpty) {
+      await ctx.showErrorDialog('Hãy nhập đầy đủ thông tin');
+      return;
+    }
+
+    RoomRequest _requestRoom = RoomRequest(_roomID);
+    GetRoomInfoResponse _roomInfoRes = await ApiService.create().getSingleRoomInfo(_requestRoom);
+    if (_roomInfoRes.status == 'OK') {
+      if (_roomInfoRes.roomInfo.room_private == 1){
+        // String room_pass = await ctx.showDataReceivedDialog('Nhập mật khẩu');
+      }
+      return;
+    }
+    else {
+      await ctx.showErrorDialog('Không thể lấy thông tin phòng!');
+      return;
+    }
+
     //
     try {
       setState(() {
@@ -167,14 +200,14 @@ class _ConnectPageState extends State<ConnectPage> {
       // Save URL and Token for convenience
       await _writePrefs();
 
-      print('Connecting with url: ${_uriCtrl.text}, '
-          'token: ${_tokenCtrl.text}...');
+      print('Connecting with roomID: ${_roomIdCtrl.text}, '
+          'user name: ${_nameCtrl.text}...');
 
       // Try to connect to a room
       // This will throw an Exception if it fails for any reason.
       final room = await LiveKitClient.connect(
-        _uriCtrl.text,
-        _tokenCtrl.text,
+        _roomIdCtrl.text,
+        _nameCtrl.text,
         roomOptions: RoomOptions(
           defaultVideoPublishOptions: VideoPublishOptions(
             simulcast: _simulcast,
@@ -232,23 +265,27 @@ class _ConnectPageState extends State<ConnectPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 70),
+                      padding: const EdgeInsets.only(bottom: 50),
                       child: SvgPicture.asset(
-                        'images/logo-dark.svg',
+                        'images/nol-logo.svg',
+                        width: 180,
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 25),
-                      child: LKTextField(
-                        label: 'Server URL',
-                        ctrl: _uriCtrl,
+                      child: NolTextField(
+                        label: 'Nhập địa chỉ phòng',
+                        placeHolder: 'Hãy nhập đường dẫn hoặc id địa chỉ phòng',
+                        inputType: TextInputType.url,
+                        ctrl: _roomIdCtrl,
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 25),
-                      child: LKTextField(
-                        label: 'Token',
-                        ctrl: _tokenCtrl,
+                      child: NolTextField(
+                        label: 'Nhập tên',
+                        placeHolder: 'Hãy nhập tên',
+                        ctrl: _nameCtrl,
                       ),
                     ),
                     Padding(
@@ -261,7 +298,7 @@ class _ConnectPageState extends State<ConnectPage> {
                             value: _simulcast,
                             onChanged: (value) => _setSimulcast(value),
                             inactiveTrackColor: Colors.white.withOpacity(.2),
-                            activeTrackColor: LKColors.lkBlue,
+                            activeTrackColor: NolColors.lkBlue,
                             inactiveThumbColor: Colors.white.withOpacity(.5),
                             activeColor: Colors.white,
                           ),
