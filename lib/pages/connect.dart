@@ -350,7 +350,7 @@ class _ConnectPageState extends State<ConnectPage> {
       await Navigator.push<void>(
         ctx,
         MaterialPageRoute(
-            builder: (_) => RoomPage(room, enterRoomRes)
+            builder: (_) => RoomPage(room)
         ),
       );
     }

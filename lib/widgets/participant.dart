@@ -11,7 +11,7 @@ import 'participant_info.dart';
 
 abstract class ParticipantWidget extends StatefulWidget {
   // Convenience method to return relevant widget for participant
-  static ParticipantWidget widgetFor(Participant participant, UsersResponse? userInfo) {
+  static ParticipantWidget widgetFor(Participant participant) {
     if (participant is LocalParticipant) {
       return LocalParticipantWidget(participant);
     } else if (participant is RemoteParticipant) {

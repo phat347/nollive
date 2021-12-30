@@ -9,16 +9,16 @@ import '../exts.dart';
 import '../widgets/controls.dart';
 import '../widgets/participant.dart';
 
-const double participantHeight = 120;
+const double participantHeight = 100;
 
 class RoomPage extends StatefulWidget {
   //
   final Room room;
-  final EnterRoomResponse enterRoomRes;
+  // final EnterRoomResponse enterRoomRes;
 
   const RoomPage(
       this.room,
-      this.enterRoomRes,
+      // this.enterRoomRes,
       {
         Key? key,
       }
@@ -142,8 +142,7 @@ class _RoomPageState extends State<RoomPage> {
         Expanded(
             child: participants.isNotEmpty
                 ? ParticipantWidget.widgetFor(
-                participants.first,
-                widget.enterRoomRes.room_info?.users.firstWhere((user) => user.info.sid == participants.first.sid)
+                participants.first
             )
                 : Container()),
         SizedBox(
@@ -155,8 +154,7 @@ class _RoomPageState extends State<RoomPage> {
               width: participantHeight * (16/9),
               height: participantHeight,
               child: ParticipantWidget.widgetFor(
-                  participants[index + 1],
-                  widget.enterRoomRes.room_info?.users.firstWhere((user) => user.info.sid == participants[index + 1].sid)
+                  participants[index + 1]
               )
             )
           )
