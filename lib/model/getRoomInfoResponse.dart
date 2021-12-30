@@ -12,7 +12,7 @@ class GetRoomInfoResponse extends ChangeNotifier {
 
   GetRoomInfoResponse.fromJson(Map<String, dynamic> responseJson):
         status = responseJson['status'] as String,
-        roomInfo = InfoRoomResponse.fromJson(responseJson['roomInfo']);
+        roomInfo = InfoRoomResponse.fromJson(responseJson['room_info']);
 }
 
 class InfoRoomResponse extends ChangeNotifier {
