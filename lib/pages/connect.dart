@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:livekit_example/model/appConfig.dart';
@@ -13,11 +16,17 @@ import 'package:livekit_example/widgets/text_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:socket_io_client/socket_io_client.dart';
+import 'package:uni_links/uni_links.dart';
 import '../exts.dart';
 import '../theme.dart';
 import 'room.dart';
 
 const String NOL_SocketEvent = 'NOL Event\n';
+
+
+bool _initialUriIsHandled = false;
+
+
 
 class ConnectPage extends StatefulWidget {
   //
@@ -30,6 +39,14 @@ class ConnectPage extends StatefulWidget {
 }
 
 class _ConnectPageState extends State<ConnectPage> {
+
+  Uri? _initialUri;
+  Uri? _latestUri;
+  Object? _err;
+
+  StreamSubscription? _sub;
+  final _scaffoldKey = GlobalKey();
+
   //
   static const _storeKeyRoomID = 'roomID';
   static const _storeKeyUserName = 'userName';
@@ -58,12 +75,90 @@ class _ConnectPageState extends State<ConnectPage> {
     // connectToServer();
     super.initState();
     // _readPrefs();
+
+    _handleIncomingLinks();
+    _handleInitialUri();
+  }
+  /// Handle incoming links - the ones that the app will recieve from the OS
+  /// while already started.
+  void _handleIncomingLinks() {
+    if (!kIsWeb) {
+      // It will handle app links while the app is already started - be it in
+      // the foreground or in the background.
+      _sub = uriLinkStream.listen((Uri? uri) {
+        if (!mounted) return;
+        print('got uri: $uri');
+        setState(() {
+          _latestUri = uri;
+          print('latestURI : ${_latestUri}');
+          _err = null;
+        });
+      }, onError: (Object err) {
+        if (!mounted) return;
+        print('got err: $err');
+        setState(() {
+          _latestUri = null;
+          print('latestURI : ${_latestUri}');
+          if (err is FormatException) {
+            _err = err;
+          } else {
+            _err = null;
+          }
+        });
+      });
+    }
+  }
+  /// Handle the initial Uri - the one the app was started with
+  ///
+  /// **ATTENTION**: `getInitialLink`/`getInitialUri` should be handled
+  /// ONLY ONCE in your app's lifetime, since it is not meant to change
+  /// throughout your app's life.
+  ///
+  /// We handle all exceptions, since it is called from initState.
+  Future<void> _handleInitialUri() async {
+    // In this example app this is an almost useless guard, but it is here to
+    // show we are not going to call getInitialUri multiple times, even if this
+    // was a weidget that will be disposed of (ex. a navigation route change).
+    if (!_initialUriIsHandled) {
+      _initialUriIsHandled = true;
+      _showSnackBar('_handleInitialUri called');
+      try {
+        final uri = await getInitialUri();
+        if (uri == null) {
+          print('no initial uri');
+        } else {
+          print('got initial uri: $uri');
+        }
+        if (!mounted) return;
+        setState(() => _initialUri = uri);
+      } on PlatformException {
+        // Platform messages may fail but we ignore the exception
+        print('falied to get initial uri');
+      } on FormatException catch (err) {
+        if (!mounted) return;
+        print('malformed initial uri');
+        setState(() => _err = err);
+      }
+    }
+  }
+
+  void _showSnackBar(String msg) {
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      final context = _scaffoldKey.currentContext;
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(msg),
+        ));
+      }
+    });
   }
 
   @override
   void dispose() {
     _roomIdCtrl.dispose();
     _nameCtrl.dispose();
+
+    _sub?.cancel();
     super.dispose();
   }
 
@@ -170,6 +265,24 @@ class _ConnectPageState extends State<ConnectPage> {
   }
 
   Future<void> _connect(BuildContext ctx) async {
+    final queryParams = _initialUri?.pathSegments.toList();
+    // final queryParams = _initialUri?.queryParametersAll.entries.toList();
+
+    print('latestURI : ${_latestUri}');
+    if(queryParams!=null)
+      {
+        if(queryParams.length>0)
+          {
+            print('Phat room id ${queryParams[1]}');
+
+            _showSnackBar('room id: ${queryParams[1]}');
+          }
+      }
+    else
+      {
+        print('Phat no deeplink');
+      }
+
     if (_roomIdCtrl.text.isEmpty ||
         _nameCtrl.text.isEmpty ||
         _roomID.isEmpty ||
@@ -244,11 +357,15 @@ class _ConnectPageState extends State<ConnectPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    // final queryParams = _latestUri?.queryParametersAll.entries.toList();
+
     Future.delayed(const Duration(milliseconds: 500), () {
       _checkFailedRoom(context);
     });
 
     return Scaffold(
+      key: _scaffoldKey,
       body: Stack(
         children: [
           Container(

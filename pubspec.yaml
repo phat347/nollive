@@ -31,6 +31,7 @@ dependencies:
     #   ref: main
 
   socket_io_client: ^2.0.0-beta.1-nullsafety.0
+  uni_links: ^0.5.1
 
 dev_dependencies:
   flutter_test:
