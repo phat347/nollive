@@ -338,7 +338,7 @@ class _ConnectPageState extends State<ConnectPage> {
       // Try to connect to a room
       // This will throw an Exception if it fails for any reason.
       final room = await LiveKitClient.connect(
-        _roomID,
+        AppConfig.livekitURL,
         liveKitToken,
         roomOptions: RoomOptions(
           defaultVideoPublishOptions: VideoPublishOptions(
