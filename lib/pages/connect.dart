@@ -71,9 +71,10 @@ class _ConnectPageState extends State<ConnectPage> {
     return _nameCtrl.text.trim();
   }
 
+  String roomPass = '';
+
   @override
   void initState() {
-    // connectToServer();
     super.initState();
     // _readPrefs();
 
@@ -182,7 +183,7 @@ class _ConnectPageState extends State<ConnectPage> {
     super.dispose();
   }
 
-  void connectToServer() {
+  void connectToServer(BuildContext ctx) {
     try {
 
       // Configure socket transports must be sepecified
@@ -191,7 +192,7 @@ class _ConnectPageState extends State<ConnectPage> {
           OptionBuilder()
               .setTransports(['websocket']) // for Flutter or Dart VM
               .disableAutoConnect() // disable auto-connection
-              .setAuth({'fullname': 'Hung Native 123','jwt': ''}) // optional
+              .setAuth({'fullname': _userName,'jwt': ''}) // optional
               .build()
       );
 
@@ -231,12 +232,10 @@ class _ConnectPageState extends State<ConnectPage> {
             print('${NOL_SocketEvent} entered_room: ${data.toString()}');
             final Map<String, dynamic> jsonData = jsonDecode(data);
             if (jsonData.keys.contains('livekit_token')) {
-              setState(() {
-                enterRoomRes = EnterRoomResponse.fromJson(jsonDecode(data));
-                liveKitToken = enterRoomRes.livekitToken;
-                print('${NOL_SocketEvent} log liveKitToken: liveKitToken');
-                _readPrefs();
-              });
+              enterRoomRes = EnterRoomResponse.fromJson(jsonDecode(data));
+              liveKitToken = enterRoomRes.livekitToken;
+              print('${NOL_SocketEvent} log liveKitToken: liveKitToken');
+              _connectLiveKitRoom(ctx);
             }
 
           }
@@ -269,7 +268,7 @@ class _ConnectPageState extends State<ConnectPage> {
   // Read saved URL and Token
   Future<void> _readPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    _roomIdCtrl.text = prefs.getString(_storeKeyRoomID) ?? '';
+    _roomIdCtrl.text = 'https://nol-v2.hatto.com/r/c2a7e8d2-1ce7-46f7-a5f3-df7232bdcd66';//prefs.getString(_storeKeyRoomID) ?? '';
     _nameCtrl.text = prefs.getString(_storeKeyUserName) ?? '';
     setState(() {
       _simulcast = prefs.getBool(_storeKeySimulcast) ?? true;
@@ -294,19 +293,19 @@ class _ConnectPageState extends State<ConnectPage> {
       return;
     }
 
-    RoomRequest _requestRoom = RoomRequest(_roomID);
-    GetRoomInfoResponse _roomInfoRes = await ApiService.create().getSingleRoomInfo(_requestRoom);
-    if (_roomInfoRes.status == 'OK') {
-      if (_roomInfoRes.roomInfo.room_private == 1){
-        // String room_pass = await ctx.showDataReceivedDialog('Nhập mật khẩu');
-      }
-      return;
-    }
-    else {
+    // RoomRequest _requestRoom = RoomRequest(_roomID);
+    GetRoomInfoResponse _roomInfoRes = await ApiService.create().getSingleRoomInfo(_roomID);
+    if (_roomInfoRes.status != 'OK') {
       await ctx.showErrorDialog('Không thể lấy thông tin phòng!');
       return;
     }
+    else if (_roomInfoRes.roomInfo.room_private == 1){
+      roomPass = await ctx.showInputDialog('Nhập mật khẩu') ?? '';
+    }
+    connectToServer(ctx);
+  }
 
+  Future<void> _connectLiveKitRoom(BuildContext ctx) async {
     //
     try {
       setState(() {
@@ -333,12 +332,16 @@ class _ConnectPageState extends State<ConnectPage> {
 
       await Navigator.push<void>(
         ctx,
-        MaterialPageRoute(builder: (_) => RoomPage(room, enterRoomRes)),
+        MaterialPageRoute(
+            builder: (_) => RoomPage(room, enterRoomRes)
+        ),
       );
-    } catch (error) {
+    }
+    catch (error) {
       print('Could not connect $error');
       await ctx.showErrorDialog('Phòng này hiện đã hết hạn hoặc không tồn tại!');
-    } finally {
+    }
+    finally {
       setState(() {
         _busy = false;
       });

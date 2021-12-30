@@ -24,6 +24,7 @@ dependencies:
   retrofit: 2.0.0
   retrofit_generator: 2.0.0+1
   json_annotation: ^4.0.1
+  fluttertoast: ^8.0.3
 
   livekit_client: ^0.5.5
     # git:
