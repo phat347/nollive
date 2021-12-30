@@ -19,8 +19,8 @@ class _ApiService implements ApiService {
   Future<GetRoomInfoResponse> getSingleRoomInfo(room) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(room.toJson());
+    final _data = FormData();
+    _data.fields.add(MapEntry('room', room));
     final _result = await _dio.fetch<Map<String, dynamic>>(
         _setStreamType<GetRoomInfoResponse>(
             Options(method: 'POST', headers: <String, dynamic>{}, extra: _extra)

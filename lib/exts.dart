@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:livekit_example/widgets/text_field.dart';
 
 extension LKExampleExt on BuildContext {
   //
@@ -135,4 +136,51 @@ extension LKExampleExt on BuildContext {
           ],
         ),
       );
+
+  Future<String?> showInputDialog(String data) {
+
+    TextEditingController textCtrl = TextEditingController();
+    var showErrInputEmpty = false;
+
+    return showDialog<String>(
+      context: this,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Thông báo'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(data),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: NolTextField(
+                label: data,
+                placeHolder: 'Nhập thông tin',
+                inputType: TextInputType.text,
+                ctrl: textCtrl,
+              ),
+            ),
+            Visibility(
+                visible: showErrInputEmpty,
+                child: Text('Vui lòng nhập mật khẩu')
+            )
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (textCtrl.text.trim().isNotEmpty) {
+                showErrInputEmpty = false;
+                Navigator.pop(ctx, textCtrl.text);
+              }
+              else {
+                showErrInputEmpty = true;
+              }
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 }

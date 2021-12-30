@@ -1,14 +1,24 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/adapter.dart';
 import 'package:livekit_example/model/appConfig.dart';
 import 'package:livekit_example/model/getRoomInfoResponse.dart';
-import 'package:livekit_example/model/roomRequest.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'ApiService.g.dart';
+dynamic errorInterceptor(DioError dioError) async {
+  if (
+  dioError.response != null &&
+      (dioError.response!.statusCode ?? 0) < 200 ||
+      (dioError.response!.statusCode ?? 0) > 300
+  ) {
+    AppConfig.showToast('Không thể lấy thông tin phòng!');
+    print(dioError.message);
+  }
+}
 
 @RestApi(baseUrl: AppConfig.baseURL)
 abstract class ApiService {
@@ -25,14 +35,15 @@ abstract class ApiService {
     dio.options.headers["content-type"] = 'multipart/form-data';
     dio.options.connectTimeout = 60000;
     dio.interceptors.add(PrettyDioLogger());
-    // dio.interceptors.add(InterceptorsWrapper(
-    //     onError: (DioError dioError) => errorInterceptor(dioError))
-    // );
+    dio.interceptors.add(InterceptorsWrapper(
+        onError: (DioError dioError, ErrorInterceptorHandler handler) => errorInterceptor(dioError))
+    );
     return ApiService(dio);
   }
 
   @POST('/get_single_room_info')
-  Future<GetRoomInfoResponse> getSingleRoomInfo(@Body() RoomRequest room);
+  @MultiPart()
+  Future<GetRoomInfoResponse> getSingleRoomInfo(@Part() String room);
 
 
 }
