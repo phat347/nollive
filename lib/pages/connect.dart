@@ -73,6 +73,7 @@ class _ConnectPageState extends State<ConnectPage> {
   @override
   void initState() {
     super.initState();
+    _readPrefs();
     _handleIncomingLinks();
     _handleInitialUri();
   }
@@ -199,7 +200,7 @@ class _ConnectPageState extends State<ConnectPage> {
         print('${NOL_SocketEvent} connect to Socket: ${data.toString()}');
 
         //request_enter_room
-        socket.emit('request_enter_room', {'room': '89475597-2f6d-4096-8b92-0bc51ddb5cc1'});
+        socket.emit('request_enter_room', {'room': _roomID});
       });
       
       socket.on('connected', (data) {
@@ -224,14 +225,23 @@ class _ConnectPageState extends State<ConnectPage> {
       //call back entered_room
       socket.on(
           'entered_room',
-              (data) {
+              (data) async {
             print('${NOL_SocketEvent} entered_room: ${data.toString()}');
             final Map<String, dynamic> jsonData = jsonDecode(data);
             if (jsonData.keys.contains('livekit_token')) {
-              enterRoomRes = EnterRoomResponse.fromJson(jsonDecode(data));
-              liveKitToken = enterRoomRes.livekitToken;
-              print('${NOL_SocketEvent} log liveKitToken: liveKitToken');
-              _connectLiveKitRoom(ctx);
+              setState(() {
+                print('${NOL_SocketEvent} log have liveKitToken');
+                enterRoomRes = EnterRoomResponse.fromJson(jsonData);
+                liveKitToken = enterRoomRes.livekitToken;
+                print('${NOL_SocketEvent} log liveKitToken: liveKitToken');
+              });
+              await _connectLiveKitRoom(ctx);
+              setState(() {
+                _busy = false;
+              });
+            }
+            else {
+              print('${NOL_SocketEvent} log dont liveKitToken: ${jsonData.toString()}');
             }
           }
       );
@@ -256,6 +266,9 @@ class _ConnectPageState extends State<ConnectPage> {
 
     } catch (e) {
       print(e.toString());
+      setState(() {
+        _busy = false;
+      });
     }
 
   }
@@ -263,7 +276,7 @@ class _ConnectPageState extends State<ConnectPage> {
   // Read saved URL and Token
   Future<void> _readPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    _roomIdCtrl.text = 'https://nol-v2.hatto.com/r/c2a7e8d2-1ce7-46f7-a5f3-df7232bdcd66';//prefs.getString(_storeKeyRoomID) ?? '';
+    // _roomIdCtrl.text = prefs.getString(_storeKeyRoomID) ?? '';
     _nameCtrl.text = prefs.getString(_storeKeyUserName) ?? '';
     setState(() {
       _simulcast = prefs.getBool(_storeKeySimulcast) ?? true;
@@ -280,17 +293,30 @@ class _ConnectPageState extends State<ConnectPage> {
 
   Future<void> _connect(BuildContext ctx) async {
 
+    setState(() {
+      _busy = true;
+    });
+
     if (_roomIdCtrl.text.isEmpty ||
         _nameCtrl.text.isEmpty ||
         _userName.isEmpty) {
       await ctx.showErrorDialog('Hãy nhập đầy đủ thông tin');
+      setState(() {
+        _busy = false;
+      });
       return;
+    }
+    else if (_roomID.isEmpty && _roomIdCtrl.text.isNotEmpty) {
+      _roomID = _roomIdCtrl.text.split('/').last.trim();
     }
 
     // RoomRequest _requestRoom = RoomRequest(_roomID);
     GetRoomInfoResponse _roomInfoRes = await ApiService.create().getSingleRoomInfo(_roomID);
     if (_roomInfoRes.status != 'OK') {
       await ctx.showErrorDialog('Không thể lấy thông tin phòng!');
+      setState(() {
+        _busy = false;
+      });
       return;
     }
     else if (_roomInfoRes.roomInfo.room_private == 1){
@@ -302,21 +328,18 @@ class _ConnectPageState extends State<ConnectPage> {
   Future<void> _connectLiveKitRoom(BuildContext ctx) async {
     //
     try {
-      setState(() {
-        _busy = true;
-      });
 
       // Save URL and Token for convenience
       await _writePrefs();
 
-      print('Connecting with roomID: ${_roomIdCtrl.text}, '
-          'user name: ${_nameCtrl.text}...');
+      print('Connecting with roomID: ${_roomID}, '
+          'token: ${liveKitToken}...');
 
       // Try to connect to a room
       // This will throw an Exception if it fails for any reason.
       final room = await LiveKitClient.connect(
-        _roomIdCtrl.text,
-        _nameCtrl.text,
+        _roomID,
+        liveKitToken,
         roomOptions: RoomOptions(
           defaultVideoPublishOptions: VideoPublishOptions(
             simulcast: _simulcast,
