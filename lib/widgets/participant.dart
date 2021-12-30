@@ -3,6 +3,7 @@ import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:livekit_example/model/roomInfo.dart';
 import 'package:livekit_example/theme.dart';
 
 import 'no_video.dart';
@@ -10,7 +11,7 @@ import 'participant_info.dart';
 
 abstract class ParticipantWidget extends StatefulWidget {
   // Convenience method to return relevant widget for participant
-  static ParticipantWidget widgetFor(Participant participant) {
+  static ParticipantWidget widgetFor(Participant participant, UsersResponse? userInfo) {
     if (participant is LocalParticipant) {
       return LocalParticipantWidget(participant);
     } else if (participant is RemoteParticipant) {

@@ -29,7 +29,7 @@ extension HexColor on Color {
   }
 }
 
-class LiveKitTheme {
+class NolTheme {
   //
   final bgColor = NolColors.nolColor;
   final textColor = Colors.white;
