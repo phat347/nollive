@@ -13,7 +13,7 @@ extension LKColors on Colors {
   static const lkDarkBlue = Color(0xFF00153C);
 }
 
-class LiveKitTheme {
+class NolTheme {
   //
   final bgColor = Colors.black;
   final textColor = Colors.white;

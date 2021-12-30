@@ -9,8 +9,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:socket_io_client/socket_io_client.dart';
 import '../exts.dart';
+import '../main.dart';
 import '../theme.dart';
 import 'room.dart';
+
+const String NOL_SocketEvent = 'NOL Event\n';
 
 class ConnectPage extends StatefulWidget {
   //
@@ -34,14 +37,14 @@ class _ConnectPageState extends State<ConnectPage> {
   bool _busy = false;
   String liveKitToken = '';
   String socketURL = 'wss://demo.nol.live:443/sfu';
-  EnterRoomResponse enterRoomRes = EnterRoomResponse('');
-
+  EnterRoomResponse enterRoomRes = EnterRoomResponse('', null);
+  bool failedRoom = false;
 
   @override
   void initState() {
+    connectToServer();
     super.initState();
     _readPrefs();
-    connectToServer();
   }
 
   @override
@@ -68,19 +71,28 @@ class _ConnectPageState extends State<ConnectPage> {
 
       // Handle socket events
       socket.onConnect((data) {
-        print('hung connect to Socket: ${data}');
+        print('${NOL_SocketEvent} connect to Socket: ${data.toString()}');
 
         //request_enter_room
         socket.emit('request_enter_room', {'room': '89475597-2f6d-4096-8b92-0bc51ddb5cc1'});
       });
-
-      socket.onConnecting((data) {
-        print('hung on connecting to Socket: ${data}');
+      
+      socket.on('connected', (data) {
+        print('${NOL_SocketEvent}connected: ${data.toString()}');
       });
 
-      socket.on('ping',
+      socket.on('failed_room',
               (data) {
-            print('hung event: ${data}');
+            print('${NOL_SocketEvent} failed_room: ${data.toString()}');
+            FailedRoomResponse _failedRoom = FailedRoomResponse.fromJson(jsonDecode(data));
+            print('_failedRoom: ${_failedRoom..status} - ${_failedRoom.message}');
+            if (_failedRoom.status == 'FAILED' && _failedRoom.message == 'INVALID_ROOM') {
+
+              setState(() {
+                failedRoom = true;
+                print('setState \nfailedRoom: ${failedRoom}');
+              });
+            }
           }
       );
 
@@ -88,13 +100,13 @@ class _ConnectPageState extends State<ConnectPage> {
       socket.on(
           'entered_room',
               (data) {
-            print('hung entered_room: ${data.toString()}');
+            print('${NOL_SocketEvent} entered_room: ${data.toString()}');
             final Map<String, dynamic> jsonData = jsonDecode(data);
             if (jsonData.keys.contains('livekit_token')) {
               setState(() {
                 enterRoomRes = EnterRoomResponse.fromJson(jsonDecode(data));
                 liveKitToken = enterRoomRes.livekitToken;
-                print('hung log liveKitToken: liveKitToken');
+                print('${NOL_SocketEvent} log liveKitToken: liveKitToken');
                 _readPrefs();
               });
             }
@@ -103,23 +115,20 @@ class _ConnectPageState extends State<ConnectPage> {
       );
 
       socket.on(
-          'connected',
-              (data) {
-            print('hung connected: ${data}');
-          }
-      );
-
-      socket.on(
           'AREYOUTHERE',
               (data) {
-            print('Hung AREYOUTHERE');
-            print('AREYOUTHERE ${data.toString()}');
+            print('${NOL_SocketEvent} AREYOUTHERE');
+            print('${NOL_SocketEvent} AREYOUTHERE ${data.toString()}');
             socket.emit('IAMHERE', data);
           }
       );
 
+      socket.onPing((data) {
+        print('${NOL_SocketEvent} onPing: ${data.toString()}');
+      });
+
       socket.onDisconnect((_) => {
-        print('disconnect')
+        print('${NOL_SocketEvent} disconnect')
       });
 
 
@@ -175,11 +184,11 @@ class _ConnectPageState extends State<ConnectPage> {
 
       await Navigator.push<void>(
         ctx,
-        MaterialPageRoute(builder: (_) => RoomPage(room)),
+        MaterialPageRoute(builder: (_) => RoomPage(room, enterRoomRes)),
       );
     } catch (error) {
       print('Could not connect $error');
-      await ctx.showErrorDialog(error);
+      await ctx.showErrorDialog('Phòng này hiện đã hết hạn hoặc không tồn tại!');
     } finally {
       setState(() {
         _busy = false;
@@ -194,83 +203,99 @@ class _ConnectPageState extends State<ConnectPage> {
     });
   }
 
+  Future<void> _checkFailedRoom(BuildContext context) async{
+    if (failedRoom == true) {
+      await context.showErrorDialog('Phòng này hiện đã hết hạn hoặc không tồn tại!');
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: Container(
-          alignment: Alignment.center,
-          child: SingleChildScrollView(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 20,
-              ),
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 70),
-                    child: SvgPicture.asset(
-                      'images/logo-dark.svg',
+  Widget build(BuildContext context) {
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _checkFailedRoom(context);
+    });
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          Container(
+            alignment: Alignment.center,
+            child: SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 20,
+                ),
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 70),
+                      child: SvgPicture.asset(
+                        'images/logo-dark.svg',
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 25),
-                    child: LKTextField(
-                      label: 'Server URL',
-                      ctrl: _uriCtrl,
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 25),
+                      child: LKTextField(
+                        label: 'Server URL',
+                        ctrl: _uriCtrl,
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 25),
-                    child: LKTextField(
-                      label: 'Token',
-                      ctrl: _tokenCtrl,
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 25),
+                      child: LKTextField(
+                        label: 'Token',
+                        ctrl: _tokenCtrl,
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 50),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Simulcast'),
-                        Switch(
-                          value: _simulcast,
-                          onChanged: (value) => _setSimulcast(value),
-                          inactiveTrackColor: Colors.white.withOpacity(.2),
-                          activeTrackColor: LKColors.lkBlue,
-                          inactiveThumbColor: Colors.white.withOpacity(.5),
-                          activeColor: Colors.white,
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 50),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Simulcast'),
+                          Switch(
+                            value: _simulcast,
+                            onChanged: (value) => _setSimulcast(value),
+                            inactiveTrackColor: Colors.white.withOpacity(.2),
+                            activeTrackColor: LKColors.lkBlue,
+                            inactiveThumbColor: Colors.white.withOpacity(.5),
+                            activeColor: Colors.white,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: _busy ? null : () => _connect(context),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_busy)
-                          const Padding(
-                            padding: EdgeInsets.only(right: 10),
-                            child: SizedBox(
-                              height: 15,
-                              width: 15,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
+                    ElevatedButton(
+                      onPressed: _busy ? null : () => _connect(context),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_busy)
+                            const Padding(
+                              padding: EdgeInsets.only(right: 10),
+                              child: SizedBox(
+                                height: 15,
+                                width: 15,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
                               ),
                             ),
-                          ),
-                        const Text('CONNECT'),
-                      ],
+                          const Text('CONNECT'),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      );
+        ],
+      ),
+    );
+  }
 }

@@ -3,19 +3,26 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:livekit_example/model/roomInfo.dart';
 
 import '../exts.dart';
 import '../widgets/controls.dart';
 import '../widgets/participant.dart';
 
+const double participantHeight = 120;
+
 class RoomPage extends StatefulWidget {
   //
   final Room room;
+  final EnterRoomResponse enterRoomRes;
 
   const RoomPage(
-    this.room, {
-    Key? key,
-  }) : super(key: key);
+      this.room,
+      this.enterRoomRes,
+      {
+        Key? key,
+      }
+      ) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _RoomPageState();
@@ -130,31 +137,37 @@ class _RoomPageState extends State<RoomPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Column(
-          children: [
-            Expanded(
-                child: participants.isNotEmpty
-                    ? ParticipantWidget.widgetFor(participants.first)
-                    : Container()),
-            SizedBox(
-              height: 100,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: math.max(0, participants.length - 1),
-                itemBuilder: (BuildContext context, int index) => SizedBox(
-                  width: 100,
-                  height: 100,
-                  child: ParticipantWidget.widgetFor(participants[index + 1]),
-                ),
-              ),
-            ),
-            if (widget.room.localParticipant != null)
-              SafeArea(
-                top: false,
-                child:
-                    ControlsWidget(widget.room, widget.room.localParticipant!),
-              ),
-          ],
+    body: Column(
+      children: [
+        Expanded(
+            child: participants.isNotEmpty
+                ? ParticipantWidget.widgetFor(
+                participants.first,
+                widget.enterRoomRes.room_info?.users.firstWhere((user) => user.info.sid == participants.first.sid)
+            )
+                : Container()),
+        SizedBox(
+          height: participantHeight,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: math.max(0, participants.length - 1),
+            itemBuilder: (BuildContext context, int index) => SizedBox(
+              width: participantHeight * (16/9),
+              height: participantHeight,
+              child: ParticipantWidget.widgetFor(
+                  participants[index + 1],
+                  widget.enterRoomRes.room_info?.users.firstWhere((user) => user.info.sid == participants[index + 1].sid)
+              )
+            )
+          )
         ),
-      );
+        if (widget.room.localParticipant != null)
+          SafeArea(
+            top: false,
+            child:
+            ControlsWidget(widget.room, widget.room.localParticipant!),
+          ),
+      ],
+    ),
+  );
 }

@@ -13,19 +13,19 @@ void main() {
 
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(const LiveKitExampleApp());
+  runApp(const NolApp());
 }
 
-class LiveKitExampleApp extends StatelessWidget {
+class NolApp extends StatelessWidget {
   //
-  const LiveKitExampleApp({
+  const NolApp({
     Key? key,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'LiveKit Flutter Example',
-        theme: LiveKitTheme().buildThemeData(context),
-        home: const ConnectPage(),
-      );
+      title: 'Nol App',
+      theme: NolTheme().buildThemeData(context),
+      home: const ConnectPage(),
+    );
 }
