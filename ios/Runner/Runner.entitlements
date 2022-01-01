@@ -2,12 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <!-- ... other keys -->
-  <key>com.apple.developer.associated-domains</key>
-  <array>
-    <string>applinks:nol-v2.hatto.com</string>
-  </array>
-  <!-- ... other keys -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:nol-v2.hatto.com</string>
+		<string>applinks:demo.nol.live</string>
+	</array>
 </dict>
-</plist>
 </plist>
