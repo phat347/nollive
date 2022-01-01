@@ -69,6 +69,8 @@ class _ConnectPageState extends State<ConnectPage> {
   }
 
   String roomPass = '';
+  List<UsersResponse> itemListUser = [];
+
 
   @override
   void initState() {
@@ -234,6 +236,11 @@ class _ConnectPageState extends State<ConnectPage> {
                 enterRoomRes = EnterRoomResponse.fromJson(jsonData);
                 liveKitToken = enterRoomRes.livekitToken;
                 print('${NOL_SocketEvent} log liveKitToken: liveKitToken');
+
+                returnList(enterRoomRes.room_info?.users);
+
+                for (var element in itemListUser) {print('Phat log user name: ${element.info.fullname}');}
+
               });
               await _connectLiveKitRoom(ctx);
               setState(() {
@@ -272,7 +279,11 @@ class _ConnectPageState extends State<ConnectPage> {
     }
 
   }
-
+  List<UsersResponse> returnList(Map<String, dynamic>? parsedJson) {
+    itemListUser.clear();
+    parsedJson?.forEach((k, v) => itemListUser.add(UsersResponse.fromJson(v)));
+    return itemListUser;
+  }
   // Read saved URL and Token
   Future<void> _readPrefs() async {
     final prefs = await SharedPreferences.getInstance();
@@ -350,7 +361,7 @@ class _ConnectPageState extends State<ConnectPage> {
       await Navigator.push<void>(
         ctx,
         MaterialPageRoute(
-            builder: (_) => RoomPage(room)
+            builder: (_) => RoomPage(room,itemListUser)
         ),
       );
     }

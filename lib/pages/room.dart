@@ -14,10 +14,10 @@ const double participantHeight = 100;
 class RoomPage extends StatefulWidget {
   //
   final Room room;
-  // final EnterRoomResponse enterRoomRes;
-
-  const RoomPage(
+  List<UsersResponse> itemListUser = [];  // final EnterRoomResponse enterRoomRes;
+  RoomPage(
       this.room,
+      this.itemListUser,
       // this.enterRoomRes,
       {
         Key? key,
@@ -131,7 +131,16 @@ class _RoomPageState extends State<RoomPage> {
       }
     }
     setState(() {
+      for (var i = 0; i < participants.length; i++) {
+        for (var j = 0; j < widget.itemListUser.length; j++) {
+          if(participants[i].identity==widget.itemListUser[j].info.sid)
+          {
+            participants[i].identity = widget.itemListUser[j].info.fullname;
+          }
+        }
+      }
       this.participants = participants;
+
     });
   }
 

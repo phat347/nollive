@@ -55,7 +55,7 @@ class RoomInfoResponse extends ChangeNotifier {
   String room;
   String created;
   String expiry_datetime;
-  List<UsersResponse> users;
+  Map<String, dynamic> users;
 
   RoomInfoResponse.fromJson(Map<String, dynamic> responseJson) :
         room_name = responseJson['room_name'] as String,
@@ -77,7 +77,7 @@ class RoomInfoResponse extends ChangeNotifier {
         room = responseJson['room'] as String,
         created = responseJson['created'] as String,
         expiry_datetime = responseJson['expiry_datetime'] as String,
-        users = (responseJson['users'] as Map<String, dynamic>).values.map((userJson) => UsersResponse.fromJson(userJson)).toList();
+        users = responseJson['users'] as Map<String, dynamic>;
 }
 
 class LivekitRoomResponse extends ChangeNotifier {
