@@ -92,6 +92,8 @@ class _ConnectPageState extends State<ConnectPage> {
         setState(() {
           _latestUri = uri;
           print('latestURI : ${_latestUri}');
+          final queryParams = _latestUri?.pathSegments.toList();
+          parseUriToRoomid(queryParams);
           _err = null;
         });
       }, onError: (Object err) {
@@ -135,21 +137,7 @@ class _ConnectPageState extends State<ConnectPage> {
           _initialUri = uri;
           final queryParams = _initialUri?.pathSegments.toList();
           // final queryParams = _initialUri?.queryParametersAll.entries.toList();
-
-          if(queryParams!=null)
-          {
-            if(queryParams.length>0)
-            {
-              print('Phat room id ${queryParams[1]}');
-              _roomIdCtrl.text = queryParams[1];
-              _roomID = queryParams[1];
-              _showSnackBar('room id: ${queryParams[1]}');
-            }
-          }
-          else
-          {
-            print('Phat no deeplink');
-          }
+          parseUriToRoomid(queryParams);
         });
       } on PlatformException {
         // Platform messages may fail but we ignore the exception
@@ -159,6 +147,23 @@ class _ConnectPageState extends State<ConnectPage> {
         print('malformed initial uri');
         setState(() => _err = err);
       }
+    }
+  }
+
+  void parseUriToRoomid(List<String>? queryParams) {
+    if(queryParams!=null)
+    {
+      if(queryParams.length>0)
+      {
+        print('Phat room id ${queryParams[1]}');
+        _roomIdCtrl.text = queryParams[1];
+        _roomID = queryParams[1];
+        _showSnackBar('room id: ${queryParams[1]}');
+      }
+    }
+    else
+    {
+      print('Phat no deeplink');
     }
   }
 
@@ -439,21 +444,24 @@ class _ConnectPageState extends State<ConnectPage> {
                         ctrl: _nameCtrl,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 50),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Simulcast'),
-                          Switch(
-                            value: _simulcast,
-                            onChanged: (value) => _setSimulcast(value),
-                            inactiveTrackColor: Colors.white.withOpacity(.2),
-                            activeTrackColor: NolColors.lkBlue,
-                            inactiveThumbColor: Colors.white.withOpacity(.5),
-                            activeColor: Colors.white,
-                          ),
-                        ],
+                    Visibility(
+                      visible: true,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 50),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Simulcast'),
+                            Switch(
+                              value: _simulcast,
+                              onChanged: (value) => _setSimulcast(value),
+                              inactiveTrackColor: Colors.white.withOpacity(.2),
+                              activeTrackColor: NolColors.lkBlue,
+                              inactiveThumbColor: Colors.white.withOpacity(.5),
+                              activeColor: Colors.white,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     ElevatedButton(
@@ -473,7 +481,7 @@ class _ConnectPageState extends State<ConnectPage> {
                                 ),
                               ),
                             ),
-                          const Text('CONNECT'),
+                          const Text('Vào phòng'),
                         ],
                       ),
                     ),
