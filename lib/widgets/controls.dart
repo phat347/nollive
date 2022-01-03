@@ -158,11 +158,11 @@ class _ControlsWidgetState extends State<ControlsWidget> {
         spacing: 5,
         runSpacing: 5,
         children: [
-          IconButton(
-            onPressed: _unpublishAll,
-            icon: const Icon(EvaIcons.closeCircleOutline),
-            tooltip: 'Unpublish all',
-          ),
+          // IconButton(
+          //   onPressed: _unpublishAll,
+          //   icon: const Icon(EvaIcons.closeCircleOutline),
+          //   tooltip: 'Unpublish all',
+          // ),
           if (participant.isMicrophoneEnabled())
             IconButton(
               onPressed: _disableAudio,
@@ -199,18 +199,18 @@ class _ControlsWidgetState extends State<ControlsWidget> {
             onPressed: () => _toggleCamera(),
             tooltip: 'toggle camera',
           ),
-          if (participant.isScreenShareEnabled())
-            IconButton(
-              icon: const Icon(EvaIcons.monitorOutline),
-              onPressed: () => _disableScreenShare(),
-              tooltip: 'unshare screen (experimental)',
-            )
-          else
-            IconButton(
-              icon: const Icon(EvaIcons.monitor),
-              onPressed: () => _enableScreenShare(),
-              tooltip: 'share screen (experimental)',
-            ),
+          // if (participant.isScreenShareEnabled())
+          //   IconButton(
+          //     icon: const Icon(EvaIcons.monitorOutline),
+          //     onPressed: () => _disableScreenShare(),
+          //     tooltip: 'unshare screen (experimental)',
+          //   )
+          // else
+          //   IconButton(
+          //     icon: const Icon(EvaIcons.monitor),
+          //     onPressed: () => _enableScreenShare(),
+          //     tooltip: 'share screen (experimental)',
+          //   ),
           IconButton(
             onPressed: _onTapDisconnect,
             icon: const Icon(EvaIcons.phoneOffOutline),
@@ -221,11 +221,11 @@ class _ControlsWidgetState extends State<ControlsWidget> {
           //   icon: const Icon(EvaIcons.paperPlane),
           //   tooltip: 'send demo data',
           // ),
-          IconButton(
-            onPressed: _onTapReconnect,
-            icon: const Icon(EvaIcons.refresh),
-            tooltip: 're-connect',
-          ),
+          // IconButton(
+          //   onPressed: _onTapReconnect,
+          //   icon: const Icon(EvaIcons.refresh),
+          //   tooltip: 're-connect',
+          // ),
         ],
       ),
     );

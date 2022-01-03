@@ -11,18 +11,20 @@ import '../widgets/participant.dart';
 
 const double participantHeight = 100;
 
+typedef OnDisconnect = void Function();
+
 class RoomPage extends StatefulWidget {
   //
   final Room room;
-  List<UsersResponse> itemListUser = [];  // final EnterRoomResponse enterRoomRes;
-  RoomPage(
-      this.room,
-      this.itemListUser,
-      // this.enterRoomRes,
-      {
-        Key? key,
-      }
-      ) : super(key: key);
+  List<UsersResponse> itemListUser = [];
+  final OnDisconnect onDisconnected;
+
+  RoomPage({
+    Key? key,
+    required this.room,
+    required this.itemListUser,
+    required this.onDisconnected
+  }) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _RoomPageState();
@@ -50,6 +52,7 @@ class _RoomPageState extends State<RoomPage> {
       await _listener.dispose();
       await widget.room.dispose();
     })();
+    widget.onDisconnected();
     super.dispose();
   }
 

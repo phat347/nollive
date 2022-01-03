@@ -59,6 +59,8 @@ class _ConnectPageState extends State<ConnectPage> {
   bool failedRoom = false;
   String _roomID = '';
 
+  IO.Socket? socket;
+
   // String get _roomID {
   //   String splitRoomId = _roomIdCtrl.text.split('/').last.trim();
   //   return splitRoomId;
@@ -87,7 +89,10 @@ class _ConnectPageState extends State<ConnectPage> {
       // It will handle app links while the app is already started - be it in
       // the foreground or in the background.
       _sub = uriLinkStream.listen((Uri? uri) {
+
         if (!mounted) return;
+        else if (_latestUri.toString() == uri.toString()) { return; }
+
         print('got uri: $uri');
         setState(() {
           _latestUri = uri;
@@ -180,11 +185,18 @@ class _ConnectPageState extends State<ConnectPage> {
 
   @override
   void dispose() {
+    clearData();
+    super.dispose();
+  }
+
+  void clearData() {
     _roomIdCtrl.dispose();
     _nameCtrl.dispose();
 
     _sub?.cancel();
-    super.dispose();
+    // _latestUri = null;
+    // _initialUri = null;
+    // _roomID = '';
   }
 
   void connectToServer(BuildContext ctx) {
@@ -192,7 +204,7 @@ class _ConnectPageState extends State<ConnectPage> {
 
       // Configure socket transports must be sepecified
 
-      IO.Socket socket = IO.io(AppConfig.socketURL,
+      socket = IO.io(AppConfig.socketURL,
           OptionBuilder()
               .setTransports(['websocket']) // for Flutter or Dart VM
               .disableAutoConnect() // disable auto-connection
@@ -200,21 +212,21 @@ class _ConnectPageState extends State<ConnectPage> {
               .build()
       );
 
-      socket.connect();
+      socket?.connect();
 
       // Handle socket events
-      socket.onConnect((data) {
+      socket?.onConnect((data) {
         print('${NOL_SocketEvent} connect to Socket: ${data.toString()}');
 
         //request_enter_room
-        socket.emit('request_enter_room', {'room': _roomID});
+        socket?.emit('request_enter_room', {'room': _roomID});
       });
       
-      socket.on('connected', (data) {
+      socket?.on('connected', (data) {
         print('${NOL_SocketEvent}connected: ${data.toString()}');
       });
 
-      socket.on('failed_room',
+      socket?.on('failed_room',
               (data) {
             print('${NOL_SocketEvent} failed_room: ${data.toString()}');
             FailedRoomResponse _failedRoom = FailedRoomResponse.fromJson(jsonDecode(data));
@@ -230,7 +242,7 @@ class _ConnectPageState extends State<ConnectPage> {
       );
 
       //call back entered_room
-      socket.on(
+      socket?.on(
           'entered_room',
               (data) async {
             print('${NOL_SocketEvent} entered_room: ${data.toString()}');
@@ -258,20 +270,20 @@ class _ConnectPageState extends State<ConnectPage> {
           }
       );
 
-      socket.on(
+      socket?.on(
           'AREYOUTHERE',
               (data) {
             print('${NOL_SocketEvent} AREYOUTHERE');
             print('${NOL_SocketEvent} AREYOUTHERE ${data.toString()}');
-            socket.emit('IAMHERE', data);
+            socket?.emit('IAMHERE', data);
           }
       );
 
-      socket.onPing((data) {
+      socket?.onPing((data) {
         print('${NOL_SocketEvent} onPing: ${data.toString()}');
       });
 
-      socket.onDisconnect((_) => {
+      socket?.onDisconnect((_) => {
         print('${NOL_SocketEvent} disconnect')
       });
 
@@ -366,7 +378,14 @@ class _ConnectPageState extends State<ConnectPage> {
       await Navigator.push<void>(
         ctx,
         MaterialPageRoute(
-            builder: (_) => RoomPage(room,itemListUser)
+            builder: (_) => RoomPage(
+              room: room,
+              itemListUser: itemListUser,
+              onDisconnected: (() {
+                print('\n\nRoomPage onDisconnected\n\n');
+                socket?.dispose();
+              }),
+            )
         ),
       );
     }
@@ -445,7 +464,7 @@ class _ConnectPageState extends State<ConnectPage> {
                       ),
                     ),
                     Visibility(
-                      visible: true,
+                      visible: false,
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 50),
                         child: Row(
