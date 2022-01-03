@@ -8,16 +8,20 @@ import 'package:livekit_example/model/roomInfo.dart';
 import '../exts.dart';
 import '../widgets/controls.dart';
 import '../widgets/participant.dart';
-
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart';
 const double participantHeight = 100;
 
 class RoomPage extends StatefulWidget {
   //
   final Room room;
-  List<UsersResponse> itemListUser = [];  // final EnterRoomResponse enterRoomRes;
+  List<UsersResponse> itemListUser = [];
+  // final EnterRoomResponse enterRoomRes;
+  IO.Socket socket;
   RoomPage(
       this.room,
       this.itemListUser,
+      this.socket,
       // this.enterRoomRes,
       {
         Key? key,
@@ -85,8 +89,53 @@ class _RoomPageState extends State<RoomPage> {
       await context.showErrorDialog(error);
     }
   }
+  List<UsersResponse> returnList(Map<String, dynamic>? parsedJson) {
+    widget.itemListUser.clear();
+    parsedJson?.forEach((k, v) => widget.itemListUser.add(UsersResponse.fromJson(v)));
+    return widget.itemListUser;
+  }
+  void connectToServer() {
+    try {
+
+      //call back entered_room
+      widget.socket.on(
+          'entered_room',
+              (data) {
+            final Map<String, dynamic> jsonData = jsonDecode(data);
+            print('Phat log enteredroom passed socked');
+            setState(() {
+              EnterRoomResponse enterRoomRes = EnterRoomResponse('', null);
+
+              enterRoomRes = EnterRoomResponse.fromJson(jsonData);
+              widget.itemListUser.clear();
+              enterRoomRes.room_info?.users.forEach((k, v) => widget.itemListUser.add(UsersResponse.fromJson(v)));
+
+              for (var i = 0; i < participants.length; i++) {
+                print('Phat debug identity: ${participants[i].identity}');
+                for (var j = 0; j < widget.itemListUser.length; j++) {
+                  print('Phat debug identity 2: ${widget.itemListUser[j].info.sid}');
+                  if(participants[i].identity==widget.itemListUser[j].info.sid)
+                  {
+                    participants[i].identity = widget.itemListUser[j].info.fullname;
+                  }
+                }
+              }
+            });
+          }
+      );
+
+
+
+
+    } catch (e) {
+      print('Phat error ${e.toString()}');
+
+    }
+
+  }
 
   void _onRoomDidUpdate() {
+    connectToServer();
     _sortParticipants();
   }
 
@@ -132,7 +181,9 @@ class _RoomPageState extends State<RoomPage> {
     }
     setState(() {
       for (var i = 0; i < participants.length; i++) {
+        print('Phat debug identity: ${participants[i].identity}');
         for (var j = 0; j < widget.itemListUser.length; j++) {
+          print('Phat debug identity: ${widget.itemListUser[j].info.sid}');
           if(participants[i].identity==widget.itemListUser[j].info.sid)
           {
             participants[i].identity = widget.itemListUser[j].info.fullname;

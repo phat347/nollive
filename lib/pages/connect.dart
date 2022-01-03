@@ -58,6 +58,7 @@ class _ConnectPageState extends State<ConnectPage> {
   EnterRoomResponse enterRoomRes = EnterRoomResponse('', null);
   bool failedRoom = false;
   String _roomID = '';
+  late IO.Socket socket;
 
   // String get _roomID {
   //   String splitRoomId = _roomIdCtrl.text.split('/').last.trim();
@@ -187,7 +188,7 @@ class _ConnectPageState extends State<ConnectPage> {
 
       // Configure socket transports must be sepecified
 
-      IO.Socket socket = IO.io(AppConfig.socketURL,
+      socket = IO.io(AppConfig.socketURL,
           OptionBuilder()
               .setTransports(['websocket']) // for Flutter or Dart VM
               .disableAutoConnect() // disable auto-connection
@@ -361,7 +362,7 @@ class _ConnectPageState extends State<ConnectPage> {
       await Navigator.push<void>(
         ctx,
         MaterialPageRoute(
-            builder: (_) => RoomPage(room,itemListUser)
+            builder: (_) => RoomPage(room,itemListUser,socket)
         ),
       );
     }
