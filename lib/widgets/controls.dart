@@ -10,16 +10,19 @@ import 'package:livekit_client/livekit_client.dart';
 
 import '../exts.dart';
 
+
 class ControlsWidget extends StatefulWidget {
   //
   final Room room;
   final LocalParticipant participant;
 
   const ControlsWidget(
-    this.room,
-    this.participant, {
-    Key? key,
-  }) : super(key: key);
+      this.room,
+      this.participant,
+      {
+        Key? key,
+      }
+      ) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _ControlsWidgetState();
@@ -28,6 +31,8 @@ class ControlsWidget extends StatefulWidget {
 class _ControlsWidgetState extends State<ControlsWidget> {
   //
   CameraPosition position = CameraPosition.front;
+  //
+  bool enableSpeaker = true;
 
   @override
   void initState() {
@@ -146,6 +151,22 @@ class _ControlsWidgetState extends State<ControlsWidget> {
     }
   }
 
+  void _onTapEnableSpeaker() {
+    enableSpeaker = !enableSpeaker;
+    print('enableSpeaker: ${enableSpeaker}');
+    widget.room.participants.forEach((key, participant) {
+
+      if (participant.sid == widget.participant.sid) { return; }
+
+      for (var videoTrack in participant.videoTracks) {
+        videoTrack.track?.mediaStreamTrack.enableSpeakerphone(enableSpeaker);
+      }
+      for (var audioTrack in participant.audioTracks) {
+        audioTrack.track?.mediaStreamTrack.enableSpeakerphone(enableSpeaker);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -215,6 +236,11 @@ class _ControlsWidgetState extends State<ControlsWidget> {
             onPressed: _onTapDisconnect,
             icon: const Icon(EvaIcons.phoneOffOutline),
             tooltip: 'disconnect',
+          ),
+          IconButton(
+            onPressed: _onTapEnableSpeaker,
+            icon: enableSpeaker ? const Icon(EvaIcons.volumeUpOutline) : const Icon(EvaIcons.volumeMuteOutline),
+            tooltip: 'enabelSpeaker',
           ),
           // IconButton(
           //   onPressed: _onTapSendData,

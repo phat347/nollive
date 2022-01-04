@@ -314,7 +314,7 @@ class _ConnectPageState extends State<ConnectPage> {
   // Save URL and Token
   Future<void> _writePrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storeKeyRoomID, _roomIdCtrl.text);
+    // await prefs.setString(_storeKeyRoomID, _roomIdCtrl.text);
     await prefs.setString(_storeKeyUserName, _nameCtrl.text);
     await prefs.setBool(_storeKeySimulcast, _simulcast);
   }
@@ -369,7 +369,12 @@ class _ConnectPageState extends State<ConnectPage> {
         AppConfig.livekitURL,
         liveKitToken,
         roomOptions: RoomOptions(
+          defaultCameraCaptureOptions: const CameraCaptureOptions(
+            cameraPosition: CameraPosition.front,
+            params: VideoParameters.presetFHD169
+          ),
           defaultVideoPublishOptions: VideoPublishOptions(
+            videoEncoding: VideoParameters.presetFHD169.encoding,
             simulcast: _simulcast,
           ),
         ),

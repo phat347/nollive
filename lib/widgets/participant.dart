@@ -69,7 +69,6 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget> extends Stat
     super.initState();
     widget.participant.addListener(_onParticipantChanged);
     _onParticipantChanged();
-    activeVideoTrack?.mediaStreamTrack.enableSpeakerphone(true);
   }
 
   @override
@@ -174,12 +173,8 @@ class _RemoteParticipantWidgetState extends _ParticipantWidgetState<RemotePartic
 
   @override
   void initState() {
-    // TODO: implement initState
-    for (final trackPublication in widget.participant.videoTracks) {
-      if (trackPublication.subscribed && !trackPublication.muted) {
-        trackPublication.track?.mediaStreamTrack.enableSpeakerphone(true);
-      }
-    }
+    activeVideoTrack?.mediaStreamTrack.enableSpeakerphone(true);
+    widget.participant.audioLevel = 1;
     super.initState();
   }
 
