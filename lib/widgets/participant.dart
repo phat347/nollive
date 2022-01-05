@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:livekit_example/model/roomInfo.dart';
@@ -9,13 +10,30 @@ import 'package:livekit_example/theme.dart';
 import 'no_video.dart';
 import 'participant_info.dart';
 
+typedef OnPinnedParticipant = void Function();
+
 abstract class ParticipantWidget extends StatefulWidget {
   // Convenience method to return relevant widget for participant
-  static ParticipantWidget widgetFor(Participant participant) {
+  static ParticipantWidget widgetFor(
+      Participant participant,
+      OnPinnedParticipant onPinned,
+      RTCVideoViewObjectFit fit,
+      bool isPinned
+      ) {
     if (participant is LocalParticipant) {
-      return LocalParticipantWidget(participant);
-    } else if (participant is RemoteParticipant) {
-      return RemoteParticipantWidget(participant);
+      return LocalParticipantWidget(
+          participant,
+              () {},
+          fit
+      );
+    }
+    else if (participant is RemoteParticipant) {
+      return RemoteParticipantWidget(
+          participant,
+          onPinned,
+          fit,
+          isPinned
+      );
     }
     throw UnimplementedError('Unknown participant type');
   }
@@ -23,9 +41,14 @@ abstract class ParticipantWidget extends StatefulWidget {
   // Must be implemented by child class
   abstract final Participant participant;
   final VideoQuality quality;
+  abstract final OnPinnedParticipant onPinnedParticipant;
+  final bool isPinned;
+  final RTCVideoViewObjectFit fit;
 
   const ParticipantWidget({
+    this.isPinned = false,
     this.quality = VideoQuality.HIGH,
+    this.fit = RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
     Key? key,
   }) : super(key: key);
 }
@@ -34,10 +57,20 @@ class LocalParticipantWidget extends ParticipantWidget {
   @override
   final LocalParticipant participant;
 
+  @override
+  final OnPinnedParticipant onPinnedParticipant;
+
+  @override
+  final RTCVideoViewObjectFit fit;
+
   const LocalParticipantWidget(
-    this.participant, {
-    Key? key,
-  }) : super(key: key);
+      this.participant,
+      this.onPinnedParticipant,
+      this.fit,
+      {
+        Key? key,
+      }
+      ) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _LocalParticipantWidgetState();
@@ -47,10 +80,24 @@ class RemoteParticipantWidget extends ParticipantWidget {
   @override
   final RemoteParticipant participant;
 
+  @override
+  final OnPinnedParticipant onPinnedParticipant;
+
+  @override
+  final RTCVideoViewObjectFit fit;
+
+  @override
+  final bool isPinned;
+
   const RemoteParticipantWidget(
-    this.participant, {
-    Key? key,
-  }) : super(key: key);
+      this.participant,
+      this.onPinnedParticipant,
+      this.fit,
+      this.isPinned,
+      {
+        Key? key,
+      }
+      ) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _RemoteParticipantWidgetState();
@@ -113,7 +160,7 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget> extends Stat
               child: activeVideoTrack != null
                   ? VideoTrackRenderer(
                 activeVideoTrack!,
-                fit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                fit: widget.fit,
               )
                   : const NoVideoWidget(),
             ),
@@ -171,34 +218,74 @@ class _RemoteParticipantWidgetState extends _ParticipantWidgetState<RemotePartic
     }
   }
 
+  void _onPinned() {
+    print('_onPinned pressed');
+    widget.onPinnedParticipant();
+  }
+
   @override
   void initState() {
-    activeVideoTrack?.mediaStreamTrack.enableSpeakerphone(true);
+    firstAudioPublication?.track?.mediaStreamTrack.enableSpeakerphone(true);
     widget.participant.audioLevel = 1;
     super.initState();
   }
 
   @override
   List<Widget> extraWidgets() => [
-        Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            // Menu for RemoteTrackPublication<RemoteVideoTrack>
-            if (firstVideoPublication != null)
-              RemoteTrackPublicationMenuWidget(
+    Row(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Menu for Pinned Video
+        if(firstVideoPublication != null && !widget.isPinned)
+          ClipRRect(
+            borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(16)
+            ),
+            child: Material(
+              color: Colors.black.withOpacity(0.2),
+              child: IconButton(
+                onPressed: _onPinned,
+                icon: SvgPicture.asset(
+                  'images/ic_pinned.svg',
+                  width: 15,
+                  height: 20
+                ),
+                tooltip: 'pinned',
+              ),
+            ),
+          ),
+        // Menu for RemoteTrackPublication<RemoteVideoTrack>
+        if (firstVideoPublication != null)
+          if (widget.isPinned)
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(16)
+              ),
+              child: RemoteTrackPublicationMenuWidget(
                 pub: firstVideoPublication!,
                 icon: EvaIcons.videoOutline,
               ),
-            // Menu for RemoteTrackPublication<RemoteAudioTrack>
-            if (firstAudioPublication != null)
-              RemoteTrackPublicationMenuWidget(
-                pub: firstAudioPublication!,
-                icon: EvaIcons.volumeUpOutline,
-              ),
-          ],
-        ),
-      ];
+            )
+          else
+            RemoteTrackPublicationMenuWidget(
+              pub: firstVideoPublication!,
+              icon: EvaIcons.videoOutline,
+            ),
+        // Menu for RemoteTrackPublication<RemoteAudioTrack>
+        if (firstAudioPublication != null)
+          ClipRRect(
+            borderRadius: const BorderRadius.horizontal(
+                right: Radius.circular(16)
+            ),
+            child: RemoteTrackPublicationMenuWidget(
+              pub: firstAudioPublication!,
+              icon: EvaIcons.volumeUpOutline,
+            ),
+          ),
+      ],
+    ),
+  ];
 }
 
 class RemoteTrackPublicationMenuWidget extends StatelessWidget {
@@ -212,7 +299,7 @@ class RemoteTrackPublicationMenuWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: Colors.black.withOpacity(0.3),
+        color: Colors.black.withOpacity(0.2),
         child: PopupMenuButton<Function>(
           icon: Icon(icon),
           onSelected: (value) => value(),
@@ -221,12 +308,12 @@ class RemoteTrackPublicationMenuWidget extends StatelessWidget {
               // Subscribe/Unsubscribe
               if (pub.subscribed == false)
                 PopupMenuItem(
-                  child: const Text('Mở mic'),
+                  child: const Text('Mở'),
                   value: () => pub.subscribed = true,
                 )
               else if (pub.subscribed == true)
                 PopupMenuItem(
-                  child: const Text('Tắt mic'),
+                  child: const Text('Tắt'),
                   value: () => pub.subscribed = false,
                 ),
             ];

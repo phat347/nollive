@@ -62,3 +62,5 @@ flutter:
     - images/nol-logo.svg
     - images/nol_mini_icon.svg
     - images/app_icon_nol.png
+    - images/ic_pinned.svg
+    - images/ic_fullscreen.svg

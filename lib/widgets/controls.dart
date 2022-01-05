@@ -34,6 +34,8 @@ class _ControlsWidgetState extends State<ControlsWidget> {
   //
   bool enableSpeaker = true;
 
+  bool isBusy = false;
+
   @override
   void initState() {
     super.initState();
@@ -152,18 +154,19 @@ class _ControlsWidgetState extends State<ControlsWidget> {
   }
 
   void _onTapEnableSpeaker() {
-    enableSpeaker = !enableSpeaker;
+
+    setState(() {
+      isBusy = true;
+      enableSpeaker = !enableSpeaker;
+    });
+
     print('enableSpeaker: ${enableSpeaker}');
     widget.room.participants.forEach((key, participant) {
-
       if (participant.sid == widget.participant.sid) { return; }
-
-      for (var videoTrack in participant.videoTracks) {
-        videoTrack.track?.mediaStreamTrack.enableSpeakerphone(enableSpeaker);
-      }
-      for (var audioTrack in participant.audioTracks) {
-        audioTrack.track?.mediaStreamTrack.enableSpeakerphone(enableSpeaker);
-      }
+      participant.audioTracks.firstOrNull?.track?.mediaStreamTrack.enableSpeakerphone(enableSpeaker);
+    });
+    setState(() {
+      isBusy = false;
     });
   }
 
@@ -171,8 +174,8 @@ class _ControlsWidgetState extends State<ControlsWidget> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        vertical: 15,
-        horizontal: 15,
+        vertical: 8,
+        horizontal: 10,
       ),
       child: Wrap(
         alignment: WrapAlignment.center,
@@ -237,10 +240,27 @@ class _ControlsWidgetState extends State<ControlsWidget> {
             icon: const Icon(EvaIcons.phoneOffOutline),
             tooltip: 'disconnect',
           ),
-          IconButton(
-            onPressed: _onTapEnableSpeaker,
-            icon: enableSpeaker ? const Icon(EvaIcons.volumeUpOutline) : const Icon(EvaIcons.volumeMuteOutline),
-            tooltip: 'enabelSpeaker',
+          Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isBusy)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 10),
+                    child: SizedBox(
+                      height: 10,
+                      width: 10,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
+                IconButton(
+                  onPressed: isBusy ? null : _onTapEnableSpeaker,
+                  icon: enableSpeaker ? const Icon(EvaIcons.volumeUpOutline) : const Icon(EvaIcons.volumeMuteOutline),
+                  tooltip: 'enableSpeaker',
+                ),
+              ]
           ),
           // IconButton(
           //   onPressed: _onTapSendData,

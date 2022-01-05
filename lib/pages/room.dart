@@ -4,12 +4,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:livekit_example/model/roomInfo.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../exts.dart';
 import '../widgets/controls.dart';
 import '../widgets/participant.dart';
 
-const double participantHeight = 100;
+const double participantPortraitHeight = 150;
+const double participantLanscapeWidth = 180;
 
 typedef OnDisconnect = void Function();
 
@@ -34,13 +36,14 @@ class _RoomPageState extends State<RoomPage> {
   //
   List<Participant> participants = [];
   late final EventsListener<RoomEvent> _listener = widget.room.createListener();
+  Participant? pinnedParticipant;
 
   @override
   void initState() {
     super.initState();
     widget.room.addListener(_onRoomDidUpdate);
     _setUpListeners();
-    _sortParticipants();
+    // _sortParticipants();
     WidgetsBinding.instance?.addPostFrameCallback((_) => _askPublish());
   }
 
@@ -58,8 +61,7 @@ class _RoomPageState extends State<RoomPage> {
 
   void _setUpListeners() => _listener
     ..on<RoomDisconnectedEvent>((_) async {
-      WidgetsBinding.instance
-          ?.addPostFrameCallback((timeStamp) => Navigator.pop(context));
+      WidgetsBinding.instance?.addPostFrameCallback((timeStamp) => Navigator.pop(context));
     })
     ..on<DataReceivedEvent>((event) {
       String decoded = 'Failed to decode';
@@ -90,7 +92,8 @@ class _RoomPageState extends State<RoomPage> {
   }
 
   void _onRoomDidUpdate() {
-    _sortParticipants();
+    // _sortParticipants();
+    onPinnedParticipant();
   }
 
   void _sortParticipants() {
@@ -147,37 +150,131 @@ class _RoomPageState extends State<RoomPage> {
     });
   }
 
+  void onPinnedParticipant() {
+
+    List<Participant> participants = [];
+    participants.addAll(widget.room.participants.values);
+
+    if (pinnedParticipant is RemoteParticipant) {
+      print('Remote pinned Participant: ${pinnedParticipant?.identity}');
+      // sort speakers for the grid
+      participants.sort((a, b) {
+        if (a.identity != b.identity) {
+          print('Sort a: ${a.identity}, b: ${b.identity}');
+          if (a.identity == pinnedParticipant?.identity) {
+            return -1;
+          }
+          if (b.identity == pinnedParticipant?.identity) {
+            return 1;
+          }
+        }
+        // joinedAt
+        return a.joinedAt.millisecondsSinceEpoch -
+            b.joinedAt.millisecondsSinceEpoch;
+      });
+    }
+
+    final localParticipant = widget.room.localParticipant;
+    if (localParticipant != null) {
+      if (participants.length > 1) {
+        participants.insert(1, localParticipant);
+      } else {
+        participants.add(localParticipant);
+      }
+    }
+
+    setState(() {
+      for (var i = 0; i < participants.length; i++) {
+        for (var j = 0; j < widget.itemListUser.length; j++) {
+          if(participants[i].identity==widget.itemListUser[j].info.sid)
+          {
+            participants[i].identity = widget.itemListUser[j].info.fullname;
+          }
+        }
+      }
+      this.participants = participants;
+
+    });
+  }
+
+  Widget pinParticipant() => Expanded(
+      child: participants.isNotEmpty
+          ? ParticipantWidget.widgetFor(
+        participants.first,
+            () {},
+        RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
+        true,
+      )
+          : Container()
+  );
+
+  Widget otherParticipant(Orientation orientation) => SizedBox(
+      height: orientation == Orientation.portrait ? participantPortraitHeight*2 : null,
+      width: orientation == Orientation.portrait ? null : participantLanscapeWidth,
+      child: GridView.builder(
+          padding: EdgeInsets.zero,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: orientation == Orientation.portrait ? 2 : 1,
+              crossAxisSpacing: 10
+          ),
+          scrollDirection: Axis.vertical,
+          itemCount: math.max(0, participants.length - 1),
+          itemBuilder: (BuildContext context, int index) => SizedBox(
+              child: ParticipantWidget.widgetFor(
+                  participants[index + 1],
+                      () {
+                    print('onPinned at index: ${index + 1}');
+                    setState(() {
+                      pinnedParticipant = participants[index + 1];
+                      onPinnedParticipant();
+                    });
+                  },
+                  RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
+                  false
+              )
+          )
+      )
+  );
+
+  Widget controlWidget(Orientation orientation) {
+    ControlsWidget ctrlWidget = ControlsWidget(widget.room, widget.room.localParticipant!);
+
+    return orientation == Orientation.portrait ?
+    SafeArea(
+        top: false,
+        child: ctrlWidget
+    ) :
+    SafeArea(
+        left: false,
+        child: SizedBox(width: 80, child: ctrlWidget)
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Column(
-      children: [
-        Expanded(
-            child: participants.isNotEmpty
-                ? ParticipantWidget.widgetFor(
-                participants.first
-            )
-                : Container()),
-        SizedBox(
-          height: participantHeight,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: math.max(0, participants.length - 1),
-            itemBuilder: (BuildContext context, int index) => SizedBox(
-              width: participantHeight * (16/9),
-              height: participantHeight,
-              child: ParticipantWidget.widgetFor(
-                  participants[index + 1]
-              )
-            )
-          )
-        ),
-        if (widget.room.localParticipant != null)
-          SafeArea(
-            top: false,
-            child:
-            ControlsWidget(widget.room, widget.room.localParticipant!),
-          ),
-      ],
+    body: OrientationBuilder(
+      builder:(context, orientation) {
+       if (orientation == Orientation.portrait) {
+         return Column(
+           children: [
+             pinParticipant(),
+             otherParticipant(orientation),
+             if (widget.room.localParticipant != null)
+               controlWidget(orientation)
+           ],
+         );
+       }
+       else {
+         return Row(
+           children: [
+             pinParticipant(),
+             otherParticipant(orientation),
+             if (widget.room.localParticipant != null)
+               controlWidget(orientation)
+           ],
+         );
+       }
+      }
     ),
   );
 }
