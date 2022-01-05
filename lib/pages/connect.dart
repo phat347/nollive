@@ -363,18 +363,28 @@ class _ConnectPageState extends State<ConnectPage> {
       print('Connecting with roomID: ${_roomID}, '
           'token: ${liveKitToken}...');
 
+      // create custom video config
+      const customParameter =  VideoParameters(
+        description: 'FHD(1080x1920) 9:16',
+        dimensions: VideoDimensions(1080, 1920),
+        encoding: VideoEncoding(
+          maxBitrate: 3000000,
+          maxFramerate: 30,
+        ),
+      );
       // Try to connect to a room
       // This will throw an Exception if it fails for any reason.
+
       final room = await LiveKitClient.connect(
         AppConfig.livekitURL,
         liveKitToken,
         roomOptions: RoomOptions(
           defaultCameraCaptureOptions: const CameraCaptureOptions(
             cameraPosition: CameraPosition.front,
-            params: VideoParameters.presetFHD169
+            params: customParameter
           ),
           defaultVideoPublishOptions: VideoPublishOptions(
-            videoEncoding: VideoParameters.presetFHD169.encoding,
+            videoEncoding: customParameter.encoding,
             simulcast: _simulcast,
           ),
         ),

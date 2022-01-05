@@ -11,6 +11,7 @@ import 'no_video.dart';
 import 'participant_info.dart';
 
 typedef OnPinnedParticipant = void Function();
+typedef OnFullScreenParticipant = void Function();
 
 abstract class ParticipantWidget extends StatefulWidget {
   // Convenience method to return relevant widget for participant
@@ -18,7 +19,8 @@ abstract class ParticipantWidget extends StatefulWidget {
       Participant participant,
       OnPinnedParticipant onPinned,
       RTCVideoViewObjectFit fit,
-      bool isPinned
+      bool isPinned,
+      OnFullScreenParticipant onFullScreen
       ) {
     if (participant is LocalParticipant) {
       return LocalParticipantWidget(
@@ -32,7 +34,8 @@ abstract class ParticipantWidget extends StatefulWidget {
           participant,
           onPinned,
           fit,
-          isPinned
+          isPinned,
+          onFullScreen
       );
     }
     throw UnimplementedError('Unknown participant type');
@@ -89,11 +92,14 @@ class RemoteParticipantWidget extends ParticipantWidget {
   @override
   final bool isPinned;
 
+  final OnFullScreenParticipant? onFullScreenParticipant;
+
   const RemoteParticipantWidget(
       this.participant,
       this.onPinnedParticipant,
       this.fit,
       this.isPinned,
+      this.onFullScreenParticipant,
       {
         Key? key,
       }
@@ -139,6 +145,14 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget> extends Stat
   // Widgets to show above the info bar
   List<Widget> extraWidgets() => [];
 
+  void _onFullScreen() {
+    print('_onFullScreen pressed');
+    if (widget is RemoteParticipantWidget) {
+      RemoteParticipantWidget _remoteWidget = widget as RemoteParticipantWidget;
+      _remoteWidget.onFullScreenParticipant!();
+    }
+  }
+
   @override
   Widget build(BuildContext ctx) => Container(
         foregroundDecoration: BoxDecoration(
@@ -181,6 +195,32 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget> extends Stat
                 ],
               ),
             ),
+
+            //  Bottom left
+            if(widget is RemoteParticipantWidget && widget.isPinned)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 30),
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child:  ClipRRect(
+                    borderRadius: const BorderRadius.all(
+                        Radius.circular(16)
+                    ),
+                    child: Material(
+                      color: Colors.black.withOpacity(0.2),
+                      child: IconButton(
+                        onPressed: _onFullScreen,
+                        icon: SvgPicture.asset(
+                            'images/ic_fullscreen.svg',
+                            width: 15,
+                            height: 20
+                        ),
+                        tooltip: 'fullscreen',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       );

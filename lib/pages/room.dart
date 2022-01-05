@@ -1,10 +1,14 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:livekit_example/model/roomInfo.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:livekit_example/theme.dart';
+import 'package:livekit_example/widgets/no_video.dart';
 
 import '../exts.dart';
 import '../widgets/controls.dart';
@@ -155,7 +159,15 @@ class _RoomPageState extends State<RoomPage> {
     List<Participant> participants = [];
     participants.addAll(widget.room.participants.values);
 
-    if (pinnedParticipant is RemoteParticipant) {
+    if (pinnedParticipant == null && participants.isNotEmpty) {
+      participants.sort((a, b) { /// Sort last participant to pin in first time in room
+        // joinedAt
+        return a.joinedAt.millisecondsSinceEpoch -
+            b.joinedAt.millisecondsSinceEpoch;
+      });
+      pinnedParticipant = participants.first ;
+    }
+    else if (pinnedParticipant is RemoteParticipant) {
       print('Remote pinned Participant: ${pinnedParticipant?.identity}');
       // sort speakers for the grid
       participants.sort((a, b) {
@@ -197,13 +209,85 @@ class _RoomPageState extends State<RoomPage> {
     });
   }
 
-  Widget pinParticipant() => Expanded(
+  void _onFullscreenParticipantPinned(BuildContext context) {
+    print('_onFullscreenParticipantPinned');
+
+    if (pinnedParticipant is RemoteParticipant) {
+      RemoteParticipant _pinnedParticipant = pinnedParticipant as RemoteParticipant;
+
+      print('fullscreen participant name: ${_pinnedParticipant.identity}');
+      VideoTrack? pinnedTrack = _pinnedParticipant.videoTracks.first.track;
+
+      var videoSettings = _pinnedParticipant.videoTracks.first.dimension;
+      var videoSettingWidth = videoSettings?.width ?? 0;
+      var videoSettingHeight = videoSettings?.height ?? 0;
+
+      print('\n videoSettingWidth: ${videoSettingWidth}\n videoSettingHeight: ${videoSettingHeight}');
+
+      if (videoSettingWidth > videoSettingHeight) {
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.landscapeRight,
+          DeviceOrientation.landscapeLeft,
+        ]);
+      }
+
+      showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          builder: (ctx) => Stack(
+            children: [
+              Container(
+                  color: NolColors.nolColor,
+                  child: pinnedTrack!= null ?
+                  VideoTrackRenderer(
+                      pinnedTrack,
+                      fit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain
+                  ) : const NoVideoWidget()
+              ),
+              SafeArea(
+                top: false,
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 30),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.all(
+                          Radius.circular(16)
+                      ),
+                      child: Material(
+                        color: NolColors.redPink.withOpacity(0.2),
+                        child: IconButton(
+                          onPressed: () {
+                            if (videoSettingWidth > videoSettingHeight) {
+                              SystemChrome.setPreferredOrientations([
+                                DeviceOrientation.portraitUp,
+                              ]);
+                            }
+                            Navigator.pop(ctx);
+                          },
+                          icon: const Icon(EvaIcons.close),
+                          tooltip: 'closeFullScreen',
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          )
+      );
+    }
+
+  }
+
+  Widget pinParticipant(BuildContext context) => Expanded(
       child: participants.isNotEmpty
           ? ParticipantWidget.widgetFor(
-        participants.first,
-            () {},
-        RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
-        true,
+          participants.first,
+              () {},
+          RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
+          true,
+              () => { _onFullscreenParticipantPinned(context) }
       )
           : Container()
   );
@@ -222,7 +306,7 @@ class _RoomPageState extends State<RoomPage> {
           itemBuilder: (BuildContext context, int index) => SizedBox(
               child: ParticipantWidget.widgetFor(
                   participants[index + 1],
-                      () {
+                      () { // Pinned Participant
                     print('onPinned at index: ${index + 1}');
                     setState(() {
                       pinnedParticipant = participants[index + 1];
@@ -230,7 +314,8 @@ class _RoomPageState extends State<RoomPage> {
                     });
                   },
                   RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
-                  false
+                  false,
+                      () { /* Fullscreen participant (pinned only)*/ }
               )
           )
       )
@@ -257,7 +342,7 @@ class _RoomPageState extends State<RoomPage> {
        if (orientation == Orientation.portrait) {
          return Column(
            children: [
-             pinParticipant(),
+             pinParticipant(context),
              otherParticipant(orientation),
              if (widget.room.localParticipant != null)
                controlWidget(orientation)
@@ -267,7 +352,7 @@ class _RoomPageState extends State<RoomPage> {
        else {
          return Row(
            children: [
-             pinParticipant(),
+             pinParticipant(context),
              otherParticipant(orientation),
              if (widget.room.localParticipant != null)
                controlWidget(orientation)
