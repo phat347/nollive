@@ -6,6 +6,8 @@ import 'package:logging/logging.dart';
 
 import 'pages/connect.dart';
 
+BuildContext? rootContext;
+
 void main() {
   // Nếu bắt Charles thì bật
   // if (!kReleaseMode) {

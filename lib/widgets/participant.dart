@@ -77,6 +77,7 @@ class LocalParticipantWidget extends ParticipantWidget {
 
   @override
   State<StatefulWidget> createState() => _LocalParticipantWidgetState();
+
 }
 
 class RemoteParticipantWidget extends ParticipantWidget {
@@ -155,75 +156,75 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget> extends Stat
 
   @override
   Widget build(BuildContext ctx) => Container(
-        foregroundDecoration: BoxDecoration(
-          border: widget.participant.isSpeaking
-              ? Border.all(
-                  width: 5,
-                  color: NolColors.redPink,
-                )
-              : null,
+    foregroundDecoration: BoxDecoration(
+      border: widget.participant.isSpeaking
+          ? Border.all(
+        width: 5,
+        color: NolColors.redPink,
+      )
+          : null,
+    ),
+    decoration: BoxDecoration(
+      color: Theme.of(ctx).cardColor,
+    ),
+    child: Stack(
+      children: [
+        // Video
+        InkWell(
+          onTap: () => setState(() => _visible = !_visible),
+          child: activeVideoTrack != null
+              ? VideoTrackRenderer(
+            activeVideoTrack!,
+            fit: widget.fit,
+          )
+              : const NoVideoWidget(),
         ),
-        decoration: BoxDecoration(
-          color: Theme.of(ctx).cardColor,
-        ),
-        child: Stack(
-          children: [
-            // Video
-            InkWell(
-              onTap: () => setState(() => _visible = !_visible),
-              child: activeVideoTrack != null
-                  ? VideoTrackRenderer(
-                activeVideoTrack!,
-                fit: widget.fit,
-              )
-                  : const NoVideoWidget(),
-            ),
 
-            // Bottom bar
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ...extraWidgets(),
-                  ParticipantInfoWidget(
-                    title: widget.participant.identity,
-                    audioAvailable: firstAudioPublication?.muted == false && firstAudioPublication?.subscribed == true,
-                    connectionQuality: widget.participant.connectionQuality,
-                  ),
-                ],
+        // Bottom bar
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ...extraWidgets(),
+              ParticipantInfoWidget(
+                title: widget.participant.identity,
+                audioAvailable: firstAudioPublication?.muted == false && firstAudioPublication?.subscribed == true,
+                connectionQuality: widget.participant.connectionQuality,
               ),
-            ),
+            ],
+          ),
+        ),
 
-            //  Bottom left
-            if(widget is RemoteParticipantWidget && widget.isPinned)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 30),
-                child: Align(
-                  alignment: Alignment.bottomRight,
-                  child:  ClipRRect(
-                    borderRadius: const BorderRadius.all(
-                        Radius.circular(16)
+        //  Bottom left
+        if(widget is RemoteParticipantWidget && widget.isPinned)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 30),
+            child: Align(
+              alignment: Alignment.bottomRight,
+              child:  ClipRRect(
+                borderRadius: const BorderRadius.all(
+                    Radius.circular(16)
+                ),
+                child: Material(
+                  color: Colors.black.withOpacity(0.2),
+                  child: IconButton(
+                    onPressed: _onFullScreen,
+                    icon: SvgPicture.asset(
+                        'images/ic_fullscreen.svg',
+                        width: 15,
+                        height: 20
                     ),
-                    child: Material(
-                      color: Colors.black.withOpacity(0.2),
-                      child: IconButton(
-                        onPressed: _onFullScreen,
-                        icon: SvgPicture.asset(
-                            'images/ic_fullscreen.svg',
-                            width: 15,
-                            height: 20
-                        ),
-                        tooltip: 'fullscreen',
-                      ),
-                    ),
+                    tooltip: 'fullscreen',
                   ),
                 ),
               ),
-          ],
-        ),
-      );
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 class _LocalParticipantWidgetState extends _ParticipantWidgetState<LocalParticipantWidget> {

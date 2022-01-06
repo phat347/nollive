@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+
+import 'package:audioplayers/audioplayers.dart';
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:livekit_example/main.dart';
 import 'package:livekit_example/model/roomInfo.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:livekit_example/theme.dart';
@@ -42,6 +45,10 @@ class _RoomPageState extends State<RoomPage> {
   late final EventsListener<RoomEvent> _listener = widget.room.createListener();
   Participant? pinnedParticipant;
 
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  AudioCache? _audioCache;
+  String audioPath = 'mp3/pubpub.mp3';
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +56,7 @@ class _RoomPageState extends State<RoomPage> {
     _setUpListeners();
     // _sortParticipants();
     WidgetsBinding.instance?.addPostFrameCallback((_) => _askPublish());
+    _setupAudioPlayer();
   }
 
   @override
@@ -58,14 +66,33 @@ class _RoomPageState extends State<RoomPage> {
       widget.room.removeListener(_onRoomDidUpdate);
       await _listener.dispose();
       await widget.room.dispose();
+      await _audioPlayer.release();
+      await _audioPlayer.dispose();
+      await _audioCache?.clearAll();
     })();
-    widget.onDisconnected();
     super.dispose();
+  }
+
+  void _setupAudioPlayer(){
+    _audioCache = AudioCache(fixedPlayer: _audioPlayer);
+  }
+
+  void _playAudio() async {
+    await _audioCache?.play(audioPath);
   }
 
   void _setUpListeners() => _listener
     ..on<RoomDisconnectedEvent>((_) async {
-      WidgetsBinding.instance?.addPostFrameCallback((timeStamp) => Navigator.pop(context));
+      WidgetsBinding.instance?.addPostFrameCallback((timeStamp) {
+        widget.onDisconnected();
+        Navigator.pop(context);
+      });
+    })
+    ..on<ParticipantConnectedEvent>((event) async {
+      print('hung log ParticipantConnectedEvent: ${event.participant.identity}');
+      print('\nPlay Enter room Sound\n');
+      /// Play Sound Enter Room
+      _playAudio();
     })
     ..on<DataReceivedEvent>((event) {
       String decoded = 'Failed to decode';
@@ -205,7 +232,6 @@ class _RoomPageState extends State<RoomPage> {
         }
       }
       this.participants = participants;
-
     });
   }
 
@@ -336,30 +362,35 @@ class _RoomPageState extends State<RoomPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: OrientationBuilder(
-      builder:(context, orientation) {
-       if (orientation == Orientation.portrait) {
-         return Column(
-           children: [
-             pinParticipant(context),
-             otherParticipant(orientation),
-             if (widget.room.localParticipant != null)
-               controlWidget(orientation)
-           ],
-         );
-       }
-       else {
-         return Row(
-           children: [
-             pinParticipant(context),
-             otherParticipant(orientation),
-             if (widget.room.localParticipant != null)
-               controlWidget(orientation)
-           ],
-         );
-       }
-      }
-    ),
-  );
+  Widget build(BuildContext context) {
+
+    rootContext = context;
+
+    return Scaffold(
+      body: OrientationBuilder(
+          builder:(context, orientation) {
+            if (orientation == Orientation.portrait) {
+              return Column(
+                children: [
+                  pinParticipant(context),
+                  otherParticipant(orientation),
+                  if (widget.room.localParticipant != null)
+                    controlWidget(orientation)
+                ],
+              );
+            }
+            else {
+              return Row(
+                children: [
+                  pinParticipant(context),
+                  otherParticipant(orientation),
+                  if (widget.room.localParticipant != null)
+                    controlWidget(orientation)
+                ],
+              );
+            }
+          }
+      ),
+    );
+  }
 }

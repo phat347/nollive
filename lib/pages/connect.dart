@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:livekit_example/Socket/SocketManager.dart';
 import 'package:livekit_example/model/appConfig.dart';
 import 'package:livekit_example/model/getRoomInfoResponse.dart';
 import 'package:livekit_example/model/roomInfo.dart';
@@ -15,9 +16,9 @@ import 'package:livekit_example/service/ApiService.dart';
 import 'package:livekit_example/widgets/text_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:socket_io_client/socket_io_client.dart';
 import 'package:uni_links/uni_links.dart';
 import '../exts.dart';
+import '../main.dart';
 import '../theme.dart';
 import 'room.dart';
 
@@ -53,18 +54,12 @@ class _ConnectPageState extends State<ConnectPage> {
   final _nameCtrl = TextEditingController();
   bool _simulcast = true;
   bool _busy = false;
+  bool _isJoinedRoom = false;
   String liveKitToken = '';
   String livekitSocketURL = AppConfig.livekitURL;
   EnterRoomResponse enterRoomRes = EnterRoomResponse('', null);
   bool failedRoom = false;
   String _roomID = '';
-
-  IO.Socket? socket;
-
-  // String get _roomID {
-  //   String splitRoomId = _roomIdCtrl.text.split('/').last.trim();
-  //   return splitRoomId;
-  // }
 
   String get _userName {
     return _nameCtrl.text.trim();
@@ -72,6 +67,7 @@ class _ConnectPageState extends State<ConnectPage> {
 
   String roomPass = '';
   List<UsersResponse> itemListUser = [];
+  Room? room;
 
 
   @override
@@ -134,7 +130,8 @@ class _ConnectPageState extends State<ConnectPage> {
         final uri = await getInitialUri();
         if (uri == null) {
           print('no initial uri');
-        } else {
+        }
+        else {
           print('got initial uri: $uri');
         }
         if (!mounted) return;
@@ -144,10 +141,12 @@ class _ConnectPageState extends State<ConnectPage> {
           // final queryParams = _initialUri?.queryParametersAll.entries.toList();
           parseUriToRoomid(queryParams);
         });
-      } on PlatformException {
+      }
+      on PlatformException {
         // Platform messages may fail but we ignore the exception
         print('falied to get initial uri');
-      } on FormatException catch (err) {
+      }
+      on FormatException catch (err) {
         if (!mounted) return;
         print('malformed initial uri');
         setState(() => _err = err);
@@ -156,18 +155,15 @@ class _ConnectPageState extends State<ConnectPage> {
   }
 
   void parseUriToRoomid(List<String>? queryParams) {
-    if(queryParams!=null)
-    {
-      if(queryParams.length>0)
-      {
+    if (queryParams != null) {
+      if (queryParams.isNotEmpty) {
         print('Phat room id ${queryParams[1]}');
         _roomIdCtrl.text = queryParams[1];
         _roomID = queryParams[1];
         _showSnackBar('room id: ${queryParams[1]}');
       }
     }
-    else
-    {
+    else {
       print('Phat no deeplink');
     }
   }
@@ -202,90 +198,46 @@ class _ConnectPageState extends State<ConnectPage> {
   void connectToServer(BuildContext ctx) {
     try {
 
-      // Configure socket transports must be sepecified
+      if (SocketManager.shared.socket != null){
+        SocketManager.shared.closeSocket(_roomID);
+      }
 
-      socket = IO.io(AppConfig.socketURL,
-          OptionBuilder()
-              .setTransports(['websocket']) // for Flutter or Dart VM
-              .disableAutoConnect() // disable auto-connection
-              .setAuth({'fullname': _userName,'jwt': ''}) // optional
-              .build()
-      );
-
-      socket?.connect();
-
-      // Handle socket events
-      socket?.onConnect((data) {
-        print('${NOL_SocketEvent} connect to Socket: ${data.toString()}');
-
-        //request_enter_room
-        socket?.emit('request_enter_room', {'room': _roomID});
-      });
-      
-      socket?.on('connected', (data) {
-        print('${NOL_SocketEvent}connected: ${data.toString()}');
-      });
-
-      socket?.on('failed_room',
-              (data) {
-            print('${NOL_SocketEvent} failed_room: ${data.toString()}');
-            FailedRoomResponse _failedRoom = FailedRoomResponse.fromJson(jsonDecode(data));
-            print('_failedRoom: ${_failedRoom..status} - ${_failedRoom.message}');
-            if (_failedRoom.status == 'FAILED' && _failedRoom.message == 'INVALID_ROOM') {
-
+      SocketManager.shared.connectAndJoinRoom(
+          _roomID,
+          _userName,
+              (roomRes) async { /// Entered Room
+            if (roomRes != null) {
               setState(() {
-                failedRoom = true;
-                print('setState \nfailedRoom: ${failedRoom}');
-              });
-            }
-          }
-      );
-
-      //call back entered_room
-      socket?.on(
-          'entered_room',
-              (data) async {
-            print('${NOL_SocketEvent} entered_room: ${data.toString()}');
-            final Map<String, dynamic> jsonData = jsonDecode(data);
-            if (jsonData.keys.contains('livekit_token')) {
-              setState(() {
-                print('${NOL_SocketEvent} log have liveKitToken');
-                enterRoomRes = EnterRoomResponse.fromJson(jsonData);
+                enterRoomRes = roomRes;
                 liveKitToken = enterRoomRes.livekitToken;
-                print('${NOL_SocketEvent} log liveKitToken: liveKitToken');
-
                 returnList(enterRoomRes.room_info?.users);
-
-                for (var element in itemListUser) {print('Phat log user name: ${element.info.fullname}');}
-
               });
-              await _connectLiveKitRoom(ctx);
-              setState(() {
-                _busy = false;
-              });
+              if (!_isJoinedRoom) {
+                _isJoinedRoom = true;
+                await _connectLiveKitRoom(ctx);
+                setState(() {
+                  _busy = false;
+                });
+              }
             }
             else {
-              print('${NOL_SocketEvent} log dont liveKitToken: ${jsonData.toString()}');
+              // sendActiveSignal (not use)
+              // _socketManager?.emit(WebSocketEvents.iAmInRoom.description, {'room': _roomID});
+
+              // if ((enterRoomRes.room_info?.users.length ?? 0) < (room?.participants.length ?? 0)) {
+                // request_enter_room again to get list new name
+                SocketManager.shared.socket?.emit(WebSocketEvents.requestEnterRoom.description, {'room': _roomID});
+              // }
             }
+          },
+              () { /// Failed Room
+            setState(() {
+              failedRoom = true;
+              print('setState \nfailedRoom: ${failedRoom}');
+            });
           }
       );
 
-      socket?.on(
-          'AREYOUTHERE',
-              (data) {
-            print('${NOL_SocketEvent} AREYOUTHERE');
-            print('${NOL_SocketEvent} AREYOUTHERE ${data.toString()}');
-            socket?.emit('IAMHERE', data);
-          }
-      );
-
-      socket?.onPing((data) {
-        print('${NOL_SocketEvent} onPing: ${data.toString()}');
-      });
-
-      socket?.onDisconnect((_) => {
-        print('${NOL_SocketEvent} disconnect')
-      });
 
 
     } catch (e) {
@@ -294,8 +246,13 @@ class _ConnectPageState extends State<ConnectPage> {
         _busy = false;
       });
     }
-
   }
+
+  void handleSocketLeftRoom() {
+    SocketManager.shared.closeSocket(_roomID);
+    _isJoinedRoom = false;
+  }
+
   List<UsersResponse> returnList(Map<String, dynamic>? parsedJson) {
     itemListUser.clear();
     parsedJson?.forEach((k, v) => itemListUser.add(UsersResponse.fromJson(v)));
@@ -339,18 +296,28 @@ class _ConnectPageState extends State<ConnectPage> {
     }
 
     // RoomRequest _requestRoom = RoomRequest(_roomID);
-    GetRoomInfoResponse _roomInfoRes = await ApiService.create().getSingleRoomInfo(_roomID);
-    if (_roomInfoRes.status != 'OK') {
-      await ctx.showErrorDialog('Không thể lấy thông tin phòng!');
+    try {
+      GetRoomInfoResponse _roomInfoRes = await ApiService.create().getSingleRoomInfo(_roomID);
+
+      if (_roomInfoRes.status != 'OK') {
+        await ctx.showErrorDialog('Không thể lấy thông tin phòng!');
+        setState(() {
+          _busy = false;
+        });
+        return;
+      }
+      else if (_roomInfoRes.roomInfo.room_private == 1){
+        roomPass = await ctx.showInputDialog('Nhập mật khẩu') ?? '';
+      }
+      connectToServer(ctx);
+    }
+    catch(e) {
+      print('Error to get Room Info: ${e}');
       setState(() {
         _busy = false;
       });
-      return;
     }
-    else if (_roomInfoRes.roomInfo.room_private == 1){
-      roomPass = await ctx.showInputDialog('Nhập mật khẩu') ?? '';
-    }
-    connectToServer(ctx);
+
   }
 
   Future<void> _connectLiveKitRoom(BuildContext ctx) async {
@@ -375,7 +342,7 @@ class _ConnectPageState extends State<ConnectPage> {
       // Try to connect to a room
       // This will throw an Exception if it fails for any reason.
 
-      final room = await LiveKitClient.connect(
+      room = await LiveKitClient.connect(
         AppConfig.livekitURL,
         liveKitToken,
         roomOptions: RoomOptions(
@@ -394,11 +361,11 @@ class _ConnectPageState extends State<ConnectPage> {
         ctx,
         MaterialPageRoute(
             builder: (_) => RoomPage(
-              room: room,
+              room: room!,
               itemListUser: itemListUser,
               onDisconnected: (() {
                 print('\n\nRoomPage onDisconnected\n\n');
-                socket?.dispose();
+                handleSocketLeftRoom();
               }),
             )
         ),
@@ -407,6 +374,9 @@ class _ConnectPageState extends State<ConnectPage> {
     catch (error) {
       print('Could not connect $error');
       await ctx.showErrorDialog('Phòng này hiện đã hết hạn hoặc không tồn tại!');
+      setState(() {
+        _busy = false;
+      });
     }
     finally {
       setState(() {
@@ -422,9 +392,16 @@ class _ConnectPageState extends State<ConnectPage> {
     });
   }
 
-  Future<void> _checkFailedRoom(BuildContext context) async{
+  Future<void> _checkFailedRoom(BuildContext context) async {
     if (failedRoom == true) {
-      await context.showErrorDialog('Phòng này hiện đã hết hạn hoặc không tồn tại!');
+      String mess = 'Phòng này hiện đã hết hạn hoặc không tồn tại!';
+      if (rootContext != null && rootContext != context) {
+        await rootContext?.showErrorDialog(mess);
+        Navigator.pop(rootContext!);
+      }
+      else {
+        await context.showErrorDialog(mess);
+      }
     }
   }
 
@@ -432,6 +409,7 @@ class _ConnectPageState extends State<ConnectPage> {
   Widget build(BuildContext context) {
 
     // final queryParams = _initialUri?.pathSegments.toList();
+    rootContext = context;
 
     Future.delayed(const Duration(milliseconds: 500), () {
       _checkFailedRoom(context);

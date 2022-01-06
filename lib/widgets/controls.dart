@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:livekit_example/Socket/SocketManager.dart';
 
 import '../exts.dart';
 
@@ -61,18 +62,22 @@ class _ControlsWidgetState extends State<ControlsWidget> {
   }
 
   void _disableAudio() async {
+    SocketManager.shared.updateOnOffAudio(false, participant);
     await participant.setMicrophoneEnabled(false);
   }
 
   Future<void> _enableAudio() async {
+    SocketManager.shared.updateOnOffAudio(true, participant);
     await participant.setMicrophoneEnabled(true);
   }
 
   void _disableVideo() async {
+    SocketManager.shared.updateOnOffVideo(false, participant);
     await participant.setCameraEnabled(false);
   }
 
   void _enableVideo() async {
+    SocketManager.shared.updateOnOffVideo(true, participant);
     await participant.setCameraEnabled(true);
   }
 

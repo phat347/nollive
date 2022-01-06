@@ -26,6 +26,8 @@ dependencies:
   json_annotation: ^4.0.1
   fluttertoast: ^8.0.3
 
+  audioplayers: ^0.20.1
+
   livekit_client: ^0.5.5
     # git:
     #   url: https://github.com/livekit/client-sdk-flutter
@@ -57,10 +59,11 @@ flutter_launcher_name:
 flutter:
   uses-material-design: true
   assets:
-    - images/logo-dark.svg
-    - images/switchCamera.svg
-    - images/nol-logo.svg
-    - images/nol_mini_icon.svg
-    - images/app_icon_nol.png
-    - images/ic_pinned.svg
-    - images/ic_fullscreen.svg
+    - assets/images/logo-dark.svg
+    - assets/images/switchCamera.svg
+    - assets/images/nol-logo.svg
+    - assets/images/nol_mini_icon.svg
+    - assets/images/app_icon_nol.png
+    - assets/images/ic_pinned.svg
+    - assets/images/ic_fullscreen.svg
+    - assets/mp3/pubpub.mp3

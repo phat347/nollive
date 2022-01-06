@@ -1,15 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:dio/dio.dart';
+
 import 'package:dio/adapter.dart';
+import 'package:dio/dio.dart';
 import 'package:livekit_example/model/appConfig.dart';
 import 'package:livekit_example/model/getRoomInfoResponse.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:retrofit/retrofit.dart';
+import 'package:dio/src/headers.dart' as _header;
 
 part 'ApiService.g.dart';
-dynamic errorInterceptor(DioError dioError) async {
+dynamic errorInterceptor(DioError dioError, ErrorInterceptorHandler handler) async {
   if (
   dioError.response != null &&
       (dioError.response!.statusCode ?? 0) < 200 ||
@@ -17,6 +19,13 @@ dynamic errorInterceptor(DioError dioError) async {
   ) {
     AppConfig.showToast('Không thể lấy thông tin phòng!');
     print(dioError.message);
+
+    handler.next(
+        DioError(
+            requestOptions: dioError.requestOptions,
+            error:dioError.response!.data)
+    );
+
   }
 }
 
@@ -36,7 +45,7 @@ abstract class ApiService {
     dio.options.connectTimeout = 60000;
     dio.interceptors.add(PrettyDioLogger());
     dio.interceptors.add(InterceptorsWrapper(
-        onError: (DioError dioError, ErrorInterceptorHandler handler) => errorInterceptor(dioError))
+        onError: (DioError dioError, ErrorInterceptorHandler handler) => errorInterceptor(dioError, handler))
     );
     return ApiService(dio);
   }
