@@ -79,7 +79,7 @@ class SocketManager {
   static SocketManager shared = SocketManager();
 
   IO.Socket? socket;
-  bool isDisconnectedSocket = true;
+  bool isDisconnectedSocket = false;
 
   void connectAndJoinRoom( String roomId, String name, OnEnteredRoom enteredRoom, OnFailedRoom failedRoom) {
 // Configure socket transports must be sepecified

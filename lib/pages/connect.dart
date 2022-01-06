@@ -224,10 +224,10 @@ class _ConnectPageState extends State<ConnectPage> {
               // sendActiveSignal (not use)
               // _socketManager?.emit(WebSocketEvents.iAmInRoom.description, {'room': _roomID});
 
-              // if ((enterRoomRes.room_info?.users.length ?? 0) < (room?.participants.length ?? 0)) {
+              if ((enterRoomRes.room_info?.users.length ?? 0) < (room?.participants.length ?? 0)) {
                 // request_enter_room again to get list new name
                 SocketManager.shared.socket?.emit(WebSocketEvents.requestEnterRoom.description, {'room': _roomID});
-              // }
+              }
             }
           },
               () { /// Failed Room
@@ -237,9 +237,6 @@ class _ConnectPageState extends State<ConnectPage> {
             });
           }
       );
-
-
-
     } catch (e) {
       print(e.toString());
       setState(() {
@@ -435,7 +432,7 @@ class _ConnectPageState extends State<ConnectPage> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 50),
                       child: SvgPicture.asset(
-                        'images/nol-logo.svg',
+                        'assets/images/nol-logo.svg',
                         width: 180,
                       ),
                     ),

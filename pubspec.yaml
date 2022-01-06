@@ -51,8 +51,8 @@ dev_dependencies:
 flutter_icons:
   ios: true
   android: true
-  image_path_ios: "images/app_icon_nol.png"
-  image_path_android: "images/app_icon_nol.png"
+  image_path_ios: "assets/images/app_icon_nol.png"
+  image_path_android: "assets/images/app_icon_nol.png"
 flutter_launcher_name:
   name: "NOL.LIVE"
 # The following section is specific to Flutter.

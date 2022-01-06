@@ -77,8 +77,14 @@ class _RoomPageState extends State<RoomPage> {
     _audioCache = AudioCache(fixedPlayer: _audioPlayer);
   }
 
-  void _playAudio() async {
-    await _audioCache?.play(audioPath);
+  void _playAudio() {
+    _audioCache?.play(audioPath, mode: PlayerMode.LOW_LATENCY);
+    Future.delayed(const Duration(milliseconds: 200), () {
+      _audioPlayer.stop();
+      _audioPlayer.release();
+      _audioPlayer.dispose();
+      _audioCache?.clearAll();
+    });
   }
 
   void _setUpListeners() => _listener
@@ -88,7 +94,7 @@ class _RoomPageState extends State<RoomPage> {
         Navigator.pop(context);
       });
     })
-    ..on<ParticipantConnectedEvent>((event) async {
+    ..on<ParticipantConnectedEvent>((event) {
       print('hung log ParticipantConnectedEvent: ${event.participant.identity}');
       print('\nPlay Enter room Sound\n');
       /// Play Sound Enter Room

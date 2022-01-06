@@ -212,7 +212,7 @@ abstract class _ParticipantWidgetState<T extends ParticipantWidget> extends Stat
                   child: IconButton(
                     onPressed: _onFullScreen,
                     icon: SvgPicture.asset(
-                        'images/ic_fullscreen.svg',
+                        'assets/images/ic_fullscreen.svg',
                         width: 15,
                         height: 20
                     ),
@@ -288,7 +288,7 @@ class _RemoteParticipantWidgetState extends _ParticipantWidgetState<RemotePartic
               child: IconButton(
                 onPressed: _onPinned,
                 icon: SvgPicture.asset(
-                  'images/ic_pinned.svg',
+                  'assets/images/ic_pinned.svg',
                   width: 15,
                   height: 20
                 ),

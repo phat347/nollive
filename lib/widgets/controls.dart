@@ -221,7 +221,7 @@ class _ControlsWidgetState extends State<ControlsWidget> {
             icon: (position == CameraPosition.back) ?
             const Icon(EvaIcons.person) :
             SvgPicture.asset(
-                'images/switchCamera.svg',
+                'assets/images/switchCamera.svg',
                 width: 20,
                 height: 20
             ),
