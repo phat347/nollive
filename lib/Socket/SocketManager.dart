@@ -81,6 +81,8 @@ class SocketManager {
   IO.Socket? socket;
   bool isDisconnectedSocket = false;
 
+  String _localSid = '';
+
   void connectAndJoinRoom( String roomId, String name, OnEnteredRoom enteredRoom, OnFailedRoom failedRoom) {
 // Configure socket transports must be sepecified
     socket = IO.io(AppConfig.socketURL,
@@ -103,9 +105,19 @@ class SocketManager {
       socket?.emit(WebSocketEvents.requestEnterRoom.description, {'room': roomId});
     });
 
-    // socket?.on('connected', (data) {
-    //   print('${NOL_SocketEvent} connected: ${data.toString()}');
-    // });
+    socket?.on('connected', (data) {
+      print('${NOL_SocketEvent} connected: ${data.toString()}');
+    });
+
+    socket?.on('message', (data) {
+      print('${NOL_SocketEvent} message: ${data.toString()}');
+      final Map<String, dynamic> jsonData = jsonDecode(data);
+
+      if (jsonData.keys.contains('sid')) {
+        print('hung log have sid');
+        _localSid = jsonData['sid'] as String;
+      }
+    });
 
     socket?.on(WebSocketEvents.failedRoom.description,
             (data) {
@@ -135,6 +147,12 @@ class SocketManager {
           }
           else {
             print('${NOL_SocketEvent} log new participant entered room: ${jsonData.toString()}');
+            var newEnterRoom = UsersResponse.fromJson(jsonDecode(data));
+            if (newEnterRoom.info.sid == _localSid) {
+              return;
+            }
+            //request_enter_room
+            socket?.emit(WebSocketEvents.requestEnterRoom.description, {'room': roomId});
             enteredRoom(null);
           }
         }
