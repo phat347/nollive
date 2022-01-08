@@ -15,6 +15,7 @@
 
   <uses-permission android:name="android.permission.BLUETOOTH" />
   <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+  <uses-permission android:name="android.permission.INTERNET"/>
   <application
         android:label="NOL.LIVE"
         android:icon="@mipmap/ic_launcher">
@@ -54,7 +55,7 @@
         <!-- Accepts URIs that begin with YOUR_SCHEME://YOUR_HOST -->
         <data
             android:scheme="nol"
-            android:host="nol-v2.hatto.com" />
+            android:host="demo.nol.live" />
       </intent-filter>
 
       <!-- App Links -->
@@ -65,7 +66,7 @@
         <!-- Accepts URIs that begin with https://YOUR_HOST -->
         <data
             android:scheme="https"
-            android:host="nol-v2.hatto.com" />
+            android:host="demo.nol.live" />
       </intent-filter>
     </activity>
     <service
