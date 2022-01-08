@@ -7,6 +7,7 @@ import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:livekit_example/Socket/SocketManager.dart';
 import 'package:livekit_example/main.dart';
 import 'package:livekit_example/model/roomInfo.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -45,7 +46,7 @@ class _RoomPageState extends State<RoomPage> {
   late final EventsListener<RoomEvent> _listener = widget.room.createListener();
   Participant? pinnedParticipant;
 
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  AudioPlayer? _audioPlayer;
   AudioCache? _audioCache;
   String audioPath = 'mp3/pubpub.mp3';
 
@@ -66,25 +67,45 @@ class _RoomPageState extends State<RoomPage> {
       widget.room.removeListener(_onRoomDidUpdate);
       await _listener.dispose();
       await widget.room.dispose();
-      await _audioPlayer.release();
-      await _audioPlayer.dispose();
+      await _audioPlayer?.release();
+      await _audioPlayer?.dispose();
       await _audioCache?.clearAll();
     })();
     super.dispose();
   }
 
   void _setupAudioPlayer(){
+    _audioPlayer = AudioPlayer();
     _audioCache = AudioCache(fixedPlayer: _audioPlayer);
   }
 
   void _playAudio() {
-    _audioCache?.play(audioPath, mode: PlayerMode.LOW_LATENCY);
-    Future.delayed(const Duration(milliseconds: 200), () {
-      _audioPlayer.stop();
-      _audioPlayer.release();
-      _audioPlayer.dispose();
-      _audioCache?.clearAll();
+
+    SocketManager.shared.updateOnOffAudio(false, widget.room.localParticipant!);
+    widget.room.localParticipant?.setMicrophoneEnabled(false);
+
+    print('\n Hung log audio start play\n');
+
+    print('\nhung log audio Cache null');
+    _setupAudioPlayer();
+
+    _audioCache?.play(audioPath).then((value) {
+      print('\n Hung log audio is play\n');
+      Future.delayed(const Duration(microseconds: 500), () { _stopAudioAndReOpenMic(); });
     });
+    _audioPlayer?.onPlayerCompletion.listen((event) { _stopAudioAndReOpenMic(); });
+  }
+
+  void _stopAudioAndReOpenMic() async {
+    // print('\n Hung log audio ${_player.state}\n');
+    print('\n Hung log audio stop play\n');
+    await _audioPlayer?.stop();
+    await _audioPlayer?.dispose();
+    await _audioCache?.clearAll();
+    _audioCache = null;
+    _audioPlayer = null;
+    SocketManager.shared.updateOnOffAudio(true, widget.room.localParticipant!);
+    await widget.room.localParticipant?.setMicrophoneEnabled(true);
   }
 
   void _setUpListeners() => _listener
@@ -231,8 +252,7 @@ class _RoomPageState extends State<RoomPage> {
     setState(() {
       for (var i = 0; i < participants.length; i++) {
         for (var j = 0; j < widget.itemListUser.length; j++) {
-          if(participants[i].identity==widget.itemListUser[j].info.sid)
-          {
+          if(participants[i].identity==widget.itemListUser[j].info.sid) {
             participants[i].identity = widget.itemListUser[j].info.fullname;
           }
         }
