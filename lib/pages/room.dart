@@ -270,7 +270,7 @@ class _RoomPageState extends State<RoomPage> {
       print('fullscreen participant name: ${_pinnedParticipant.identity}');
       VideoTrack? pinnedTrack = _pinnedParticipant.videoTracks.first.track;
 
-      var videoSettings = _pinnedParticipant.videoTracks.first.dimension;
+      var videoSettings = _pinnedParticipant.videoTracks.first.dimensions;
       var videoSettingWidth = videoSettings?.width ?? 0;
       var videoSettingHeight = videoSettings?.height ?? 0;
 

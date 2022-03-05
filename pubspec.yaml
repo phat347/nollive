@@ -28,7 +28,7 @@ dependencies:
 
   audioplayers: ^0.20.1
 
-  livekit_client: ^0.5.5
+  livekit_client: 0.5.7
     # git:
     #   url: https://github.com/livekit/client-sdk-flutter
     #   ref: main
